@@ -93,6 +93,7 @@ body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;fil
 .state{font-family:var(--f-ui);font-size:14px;font-weight:700;letter-spacing:.22em;text-anchor:middle;transition:fill .4s}
 
 /* gráfico de potência */
+.app.no-chart{grid-template-rows:auto minmax(0,1fr) auto}
 .chart{border-radius:22px;padding:10px 18px 12px;display:grid;gap:6px}
 .chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .chart-head .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -223,7 +224,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
     </div>
   </div>
 
-  <section class="chart glass" aria-label="Potência no último minuto">
+  <section class="chart glass" id="chart" aria-label="Potência no último minuto">
     <div class="chart-head"><span class="l">Potência · 60 s</span><span class="peak" id="peak">pico <b>+0</b> / <i>−0</i> kW</span></div>
     <div class="chart-body">
       <svg viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true">
@@ -256,6 +257,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       <button id="btnGps" aria-pressed="false">GPS</button>
       <button id="btnDemo" aria-pressed="false">Demo</button>
       <button id="btnReset">Repor</button>
+      <button id="btnChart" aria-pressed="true" aria-controls="chart">Gráfico</button>
       <button id="btnFull">Ecrã inteiro</button>
     </div>
     <p class="note" id="note">A procurar sinal GPS…</p>
@@ -532,7 +534,19 @@ function drawChart(){
 }
 
 // recolhe um ponto a cada 250 ms (temporizador próprio, para o eixo do tempo ser certo mesmo que o ecrã abrande)
-setInterval(() => { hist.push(S.power); if (hist.length > HIST_N) hist.shift(); if (document.visibilityState === "visible") drawChart(); }, 250);
+setInterval(() => { hist.push(S.power); if (hist.length > HIST_N) hist.shift(); if (document.visibilityState === "visible" && !$("chart").hidden) drawChart(); }, 250);
+
+// mostrar / ocultar o gráfico (a escolha fica guardada neste browser)
+function setChart(on){
+  $("chart").hidden = !on;
+  document.querySelector(".app").classList.toggle("no-chart", !on);
+  $("btnChart").setAttribute("aria-pressed", String(on));
+  if (on) drawChart();
+  try{ localStorage.setItem("voltChart", on ? "1" : "0"); }catch(e){}
+}
+$("btnChart").addEventListener("click", () => setChart($("chart").hidden));
+let savedChart = true; try{ savedChart = localStorage.getItem("voltChart") !== "0"; }catch(e){}
+setChart(savedChart);
 
 /* ---------- Modos de condução ---------- */
 const MODES = { sport:"SPORT", eco:"ECO", comfort:"COMFORT" };

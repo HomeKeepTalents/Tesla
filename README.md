@@ -8,9 +8,9 @@ Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do
   - **Velocidade** de 0 a 300 km/h, com arco que acende com a velocidade, zona vermelha a partir de 250, velocidade máxima e o modo de condução.
   - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja) e regeneração para a esquerda até 100 kW (azul), com ícones que acendem. Mostra também o consumo médio em Wh/km.
 - **Modos de condução** no topo: **Sport** (vermelho), **Eco** (verde) e **Comfort** (azul). Mudam as cores do arco de velocidade, da luz de fundo e dos botões. O modo escolhido fica guardado.
-- **Gráfico de potência dos últimos 60 s**: laranja acima de zero (a consumir), azul abaixo (a regenerar), com os picos do último minuto.
+- **Gráfico de potência dos últimos 60 s**: laranja acima de zero (a consumir), azul abaixo (a regenerar), com os picos do último minuto. O botão **Gráfico** mostra ou oculta o gráfico (sem ele, os discos ficam maiores); a escolha fica guardada.
 - Viagem no rodapé: distância, kWh gastos, kWh regenerados, **consumo** da viagem (kWh gastos menos kWh regenerados), % recuperado e **tempo de viagem**.
-- Botões: GPS, Demo, Repor (viagem a zero) e Ecrã inteiro.
+- Botões: GPS, Demo, Repor (viagem a zero), Gráfico e Ecrã inteiro.
 - O GPS arranca sozinho ao abrir a app. Se o browser não der localização, passa para a demonstração.
 - O ecrã fica ligado e a app funciona sem internet depois de aberta uma vez.
 - Ecrã na horizontal (Tesla, tablet): discos lado a lado. Telemóvel ao alto: um por cima do outro.
