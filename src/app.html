@@ -49,7 +49,11 @@ body[data-mode="comfort"]{--accent:#3b82f6; --mood:#2563eb; --sw0:#a5f3fc; --sw1
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
 
 /* topo */
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+/* três colunas: as laterais com a mesma largura, para os modos ficarem sempre no centro do ecrã */
+header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+header > .lefthead{justify-self:start}
+header > .modes{justify-self:center}
+header > .right{justify-self:end}
 .pill{border-radius:999px;padding:8px 16px;display:flex;align-items:center;gap:14px}
 .chip{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap}
 .chip i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
@@ -184,7 +188,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* telemóvel ao alto */
 @media (orientation:portrait){
   .cluster{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:10px}
-  header{flex-wrap:wrap;row-gap:8px}
+  header{display:flex;justify-content:space-between;flex-wrap:wrap;row-gap:8px}
   .modes{order:3;width:100%;justify-content:center;box-sizing:border-box}
   .chips{display:none}
   .chart{padding:8px 14px 10px;border-radius:18px}
