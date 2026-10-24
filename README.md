@@ -4,14 +4,16 @@ Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do
 
 ## O que tem
 
-- Dois mostradores com moldura hexagonal, ao estilo de um painel desportivo:
-  - **Velocidade** de 0 a 300 km/h, com banda vermelha que acende com a velocidade, ponteiro laranja, zona vermelha a partir de 250, velocidade máxima e P/D.
-  - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja → vermelho) e regeneração para a esquerda até 100 kW (azul). Mostra também o consumo médio em Wh/km.
-- Viagem no rodapé: distância, kWh gastos, kWh regenerados, **consumo** da viagem (kWh gastos menos kWh regenerados, desde o início da viagem), % recuperado e **tempo de viagem**.
+- Dois discos de vidro ("liquid glass") sobre luz colorida em movimento:
+  - **Velocidade** de 0 a 300 km/h, com arco que acende com a velocidade, zona vermelha a partir de 250, velocidade máxima e o modo de condução.
+  - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja) e regeneração para a esquerda até 100 kW (azul), com ícones que acendem. Mostra também o consumo médio em Wh/km.
+- **Modos de condução** no topo: **Sport** (vermelho), **Eco** (verde) e **Comfort** (azul). Mudam as cores do arco de velocidade, da luz de fundo e dos botões. O modo escolhido fica guardado.
+- **Gráfico de potência dos últimos 60 s**: laranja acima de zero (a consumir), azul abaixo (a regenerar), com os picos do último minuto.
+- Viagem no rodapé: distância, kWh gastos, kWh regenerados, **consumo** da viagem (kWh gastos menos kWh regenerados), % recuperado e **tempo de viagem**.
 - Botões: GPS, Demo, Repor (viagem a zero) e Ecrã inteiro.
 - O GPS arranca sozinho ao abrir a app. Se o browser não der localização, passa para a demonstração.
 - O ecrã fica ligado e a app funciona sem internet depois de aberta uma vez.
-- Ecrã na horizontal (Tesla, tablet): mostradores lado a lado. Telemóvel ao alto: um por cima do outro.
+- Ecrã na horizontal (Tesla, tablet): discos lado a lado. Telemóvel ao alto: um por cima do outro.
 
 ## Como a potência é calculada
 
@@ -26,9 +28,10 @@ Dá a tendência certa e valores próximos da realidade em estrada plana. Não c
 
 ## Tempo de viagem
 
-A app mede a viagem sozinha:
-- conta enquanto o carro anda, e as paragens curtas (semáforos, trânsito) até 3 minutos também contam;
-- se o carro ficar parado mais tempo, o relógio pára; se ficar parado mais de 10 minutos, a próxima condução começa uma viagem nova;
+O tempo **só conta com o carro em andamento**. Como a app usa só o GPS, isso é deduzido do movimento (não aparece no ecrã):
+- começa a contar depois de 2 segundos seguidos em movimento. Assim, um erro do GPS com o carro estacionado não arranca o relógio;
+- num semáforo ou no trânsito continua a contar; só pára depois de 3 minutos parado;
+- depois de mais de 10 minutos parado, a próxima condução começa uma viagem nova;
 - a viagem fica guardada no browser, por isso não se perde se a página recarregar. Ao fim de 6 horas sem uso começa de novo;
 - **Repor** põe tudo a zero.
 

@@ -22,6 +22,8 @@
   --red:#ff3b3f; --orange:#ff8a3c; --amber:#ffc04d; --regen:#38b6ff; --violet:#7b5cff;
   --glass:rgba(255,255,255,.07); --glass-hi:rgba(255,255,255,.16); --glass-line:rgba(255,255,255,.2);
   --glow:var(--orange);
+  /* cor do modo de condução (Sport por omissão) */
+  --accent:#ff3b3f; --mood:#ff3b3f; --sw0:#ffc04d; --sw1:#ff8a3c; --sw2:#ff3b3f;
   --f-num:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-ui:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -30,11 +32,14 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);margin:0;overf
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 body[data-s="regen"]{--glow:var(--regen)}
 body[data-s="idle"]{--glow:var(--violet)}
+body[data-mode="eco"]{--accent:#22c55e; --mood:#16a34a; --sw0:#d9f99d; --sw1:#4ade80; --sw2:#10b981}
+body[data-mode="comfort"]{--accent:#3b82f6; --mood:#2563eb; --sw0:#a5f3fc; --sw1:#60a5fa; --sw2:#6366f1}
+.sg0{stop-color:var(--sw0)} .sg1{stop-color:var(--sw1)} .sg2{stop-color:var(--sw2)}
 
 /* luz por trás do vidro */
 .ambient{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;will-change:transform;transition:background 1.2s ease, opacity 1.2s ease}
-.b1{width:52vmax;height:52vmax;left:-12vmax;top:-6vmax;background:var(--red);opacity:calc(.22 + var(--heat,0)*.5);animation:drift1 22s ease-in-out infinite alternate}
+.b1{width:52vmax;height:52vmax;left:-12vmax;top:-6vmax;background:var(--mood);opacity:calc(.22 + var(--heat,0)*.5);animation:drift1 22s ease-in-out infinite alternate}
 .b2{width:46vmax;height:46vmax;right:-10vmax;top:8vmax;background:var(--glow);opacity:.45;animation:drift2 26s ease-in-out infinite alternate}
 .b3{width:40vmax;height:40vmax;left:28vmax;bottom:-22vmax;background:var(--violet);opacity:.32;animation:drift3 30s ease-in-out infinite alternate}
 @keyframes drift1{to{transform:translate(14vmax,10vmax) scale(1.15)}}
@@ -42,7 +47,7 @@ body[data-s="idle"]{--glow:var(--violet)}
 @keyframes drift3{to{transform:translate(-10vmax,-12vmax) scale(1.2)}}
 .ambient::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(6,7,10,.55) 100%)}
 
-.app{position:relative;z-index:1;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:12px;
+.app{position:relative;z-index:1;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:12px;
   padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* vidro: base comum */
@@ -60,8 +65,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;mi
 .chip i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
 .chip.live i{background:#4ade80;box-shadow:0 0 10px #4ade80}
 .chip.demo i{background:var(--amber);box-shadow:0 0 10px var(--amber)}
-.mode{font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.28em;color:var(--fg)}
-.mode b{color:var(--red);font-weight:700}
+.modes{padding:4px;gap:4px}
+.modes button{min-height:34px;padding:7px 16px;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.modes button:not([aria-pressed="true"]){background:transparent;box-shadow:none;color:var(--muted)}
 .clock{font-family:var(--f-num);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
 .right{display:flex;align-items:center;gap:10px}
 
@@ -88,15 +94,26 @@ svg text{font-family:var(--f-num)}
 .big{fill:var(--fg);font-weight:300;text-anchor:middle;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .sub{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:700;text-anchor:middle;letter-spacing:.2em}
 .dim{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:.06em}
-.gear{font-weight:600;font-size:24px;text-anchor:middle;fill:rgba(255,255,255,.28);transition:fill .3s, font-size .3s}
-.gear.on{fill:var(--fg);font-size:30px;filter:url(#glow)}
-.gear-bg{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.14);stroke-width:1}
+.modelbl{font-family:var(--f-ui);font-size:15px;font-weight:700;letter-spacing:.34em;text-anchor:middle;fill:var(--accent);filter:url(#glow);transition:fill .6s}
 .ico{opacity:.4;transition:opacity .4s}
 .ico-regen{stroke:var(--regen);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .ico-regen .head{fill:var(--regen);stroke:none}
 .ico-power{fill:var(--orange)}
 body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;filter:url(#glow)}
 .state{font-family:var(--f-ui);font-size:14px;font-weight:700;letter-spacing:.22em;text-anchor:middle;transition:fill .4s}
+
+/* gráfico de potência */
+.chart{border-radius:22px;padding:10px 18px 12px;display:grid;gap:6px}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.chart-head .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.peak{font-family:var(--f-num);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.peak b{color:var(--orange);font-weight:600} .peak i{color:var(--regen);font-style:normal;font-weight:600}
+.chart-body{position:relative;height:clamp(48px,9vh,88px);margin-left:42px;margin-right:6px}
+.chart-body svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.czero{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
+.cline{fill:none;stroke:rgba(255,255,255,.8);stroke-width:1.6;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.axis{position:absolute;left:-42px;width:34px;text-align:right;font-family:var(--f-num);font-size:11px;color:var(--muted);transform:translateY(-50%);font-variant-numeric:tabular-nums}
+.cdot{position:absolute;right:-5px;top:50%;width:10px;height:10px;border-radius:50%;transform:translateY(-50%);background:#fff;box-shadow:0 0 12px 2px var(--dot,#fff)}
 
 /* barra de baixo */
 .bar{border-radius:26px;padding:12px 14px 12px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px 22px;flex-wrap:wrap}
@@ -112,8 +129,8 @@ button{font-family:var(--f-ui);font-weight:700;font-size:13px;letter-spacing:.04
   background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.12);
   transition:transform .15s ease, background .3s ease}
-button[aria-pressed="true"]{background:linear-gradient(160deg,color-mix(in srgb,var(--red) 85%,#fff 15%),color-mix(in srgb,var(--red) 55%,transparent));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 0 24px color-mix(in srgb,var(--red) 55%,transparent)}
+button[aria-pressed="true"]{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 85%,#fff 15%),color-mix(in srgb,var(--accent) 55%,transparent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 0 24px color-mix(in srgb,var(--accent) 55%,transparent)}
 button:active{transform:scale(.96)}
 button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 .note{font-size:13px;color:var(--muted);margin:0;flex-basis:100%;text-align:center;min-height:16px}
@@ -121,7 +138,11 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* telemóvel ao alto */
 @media (orientation:portrait){
   .cluster{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:10px}
-  .mode{display:none}
+  header{flex-wrap:wrap;row-gap:8px}
+  .modes{order:3;width:100%;justify-content:center;box-sizing:border-box}
+  .chart{padding:8px 14px 10px;border-radius:18px}
+  .chart-body{height:44px}
+  .modes button{flex:1;padding:7px 6px}
   .bar{padding:12px 14px;border-radius:22px}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 12px;width:100%}
   .stat .v{font-size:18px}
@@ -142,7 +163,11 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       <span class="chip" id="chipSpeed"><i></i><span id="chipSpeedTxt">Demo</span></span>
       <span class="chip" id="chipPower"><i></i><span id="chipPowerTxt">Potência calculada</span></span>
     </div>
-    <div class="pill glass mode"><b>●</b> SPORT</div>
+    <div class="pill glass modes" role="group" aria-label="Modo de condução">
+      <button data-m="sport" aria-pressed="true">Sport</button>
+      <button data-m="eco" aria-pressed="false">Eco</button>
+      <button data-m="comfort" aria-pressed="false">Comfort</button>
+    </div>
     <div class="right">
       <div class="pill glass clock" id="clock">--:--</div>
     </div>
@@ -155,7 +180,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
         <svg viewBox="0 0 400 400" aria-label="Velocidade">
           <defs>
             <linearGradient id="sweepGrad" gradientUnits="userSpaceOnUse" x1="40" y1="330" x2="360" y2="110">
-              <stop offset="0" stop-color="#ffc04d"/><stop offset=".5" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3b3f"/>
+              <stop class="sg0" offset="0"/><stop class="sg1" offset=".5"/><stop class="sg2" offset="1"/>
             </linearGradient>
             <linearGradient id="powerGrad" gradientUnits="userSpaceOnUse" x1="200" y1="40" x2="340" y2="300">
               <stop offset="0" stop-color="#ffc04d"/><stop offset=".55" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3b3f"/>
@@ -175,13 +200,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
           <text class="big" id="speed" x="200" y="226" font-size="90">0</text>
           <text class="sub" x="200" y="262">KM/H</text>
           <text class="dim" id="maxTxt" x="200" y="300">MÁX 0</text>
-          <rect class="gear-bg" x="128" y="334" width="144" height="40" rx="20"/>
-          <g aria-label="Mudança">
-            <text class="gear on" id="gP" x="146" y="364">P</text>
-            <text class="gear" id="gR" x="182" y="364">R</text>
-            <text class="gear" id="gN" x="218" y="364">N</text>
-            <text class="gear" id="gD" x="254" y="364">D</text>
-          </g>
+          <text class="modelbl" id="modeLbl" x="200" y="356">SPORT</text>
         </svg>
       </div>
     </div>
@@ -213,6 +232,26 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       </div>
     </div>
   </div>
+
+  <section class="chart glass" aria-label="Potência no último minuto">
+    <div class="chart-head"><span class="l">Potência · 60 s</span><span class="peak" id="peak">pico <b>+0</b> / <i>−0</i> kW</span></div>
+    <div class="chart-body">
+      <svg viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="cPosG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a3c" stop-opacity=".85"/><stop offset="1" stop-color="#ff8a3c" stop-opacity=".05"/></linearGradient>
+          <linearGradient id="cNegG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38b6ff" stop-opacity=".05"/><stop offset="1" stop-color="#38b6ff" stop-opacity=".85"/></linearGradient>
+        </defs>
+        <path id="cPos" fill="url(#cPosG)"/>
+        <path id="cNeg" fill="url(#cNegG)"/>
+        <line class="czero" id="cZero" x1="0" x2="600" y1="66" y2="66"/>
+        <path class="cline" id="cLine"/>
+      </svg>
+      <span class="axis" id="cMax" style="top:0%">+50</span>
+      <span class="axis" id="cZeroLbl" style="top:66%">0</span>
+      <span class="axis" id="cMin" style="top:100%">−25</span>
+      <span class="cdot" id="cDot"></span>
+    </div>
+  </section>
 
   <div class="bar glass">
     <div class="stats">
@@ -368,29 +407,38 @@ function startDemo(){
 }
 function stopDemo(){ if (!demoTimer) return; clearInterval(demoTimer); demoTimer=null; loadTrip(); }
 
-/* ---------- Tempo de viagem ---------- */
-// Conta enquanto o carro anda; paragens curtas (semáforos, trânsito) até 3 minutos também contam.
-// Se ficar parado mais de 10 minutos depois disso, a próxima condução começa uma viagem nova.
-const TRIP_KEY = "voltTrip", NEW_TRIP_AFTER = 10*60e3, STOP_PAUSE = 3*60e3;
-let tripMs = 0, tripOn = false, stoppedMs = 0, parkedMs = 0, tripLast = performance.now(), tripSaved = 0;
+/* ---------- Mudança e tempo de viagem ---------- */
+// O tempo só conta com o carro "em andamento" (D). Não aparece no ecrã: serve só para o relógio da viagem.
+// Com o GPS só se sabe se o carro anda ou está parado, por isso:
+//  P → D  depois de 2 s seguidos em movimento (evita arranques falsos por erros do GPS estacionado);
+//  D → P  depois de 3 min parado (num semáforo ou no trânsito o carro continua em D).
+// Se ficar em P mais de 10 minutos, a próxima condução começa uma viagem nova.
+const TRIP_KEY = "voltTrip", NEW_TRIP_AFTER = 10*60e3, STOP_PAUSE = 3*60e3, START_AFTER = 2000, MOVING_KMH = 1;
+let tripMs = 0, tripOn = false, stoppedMs = 0, movingMs = 0, parkedMs = 0, tripLast = performance.now(), tripSaved = 0;
+S.gear = "P";
 function tripTick(now){
   let dt = now - tripLast; tripLast = now;
   if (dt <= 0) return;
   dt = Math.min(dt, 30*60e3);   // página em segundo plano: continua a contar, até 30 min de cada vez
-  const moving = S.speed > 1;
-  stoppedMs = moving ? 0 : stoppedMs + dt;
-  const driving = moving || (tripOn && stoppedMs < STOP_PAUSE);
-  if (driving){
-    if (parkedMs > NEW_TRIP_AFTER && tripOn){ resetTrip(); note("Viagem nova: o carro esteve estacionado mais de 10 minutos."); }
-    parkedMs = 0; tripOn = true; tripMs += dt;
-  } else parkedMs += dt;
+  const moving = S.speed > MOVING_KMH;
+  if (moving){ movingMs += dt; stoppedMs = 0; } else { stoppedMs += dt; movingMs = 0; }
+
+  if (S.gear === "P" && movingMs >= START_AFTER){
+    if (tripOn && parkedMs > NEW_TRIP_AFTER){ resetTrip(); note("Viagem nova: o carro esteve estacionado mais de 10 minutos."); }
+    S.gear = "D"; parkedMs = 0;
+  } else if (S.gear !== "P" && stoppedMs >= STOP_PAUSE){
+    S.gear = "P";
+  }
+
+  if (S.gear === "D" || S.gear === "R"){ tripOn = true; tripMs += dt; }
+  else parkedMs += dt;
 }
 function showTrip(){
   const sec = Math.floor(tripMs/1000), h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), x = sec%60;
   $("tripTime").textContent = h ? `${h}:${String(m).padStart(2,"0")}` : `${m}:${String(x).padStart(2,"0")}`;
   $("tripUnit").textContent = h ? "h" : "min";
 }
-function resetTrip(){ Object.assign(S,{vmax:0,distKm:0,used:0,regen:0}); tripMs = 0; tripOn = false; stoppedMs = 0; parkedMs = 0; }
+function resetTrip(){ Object.assign(S,{vmax:0,distKm:0,used:0,regen:0}); tripMs = 0; tripOn = false; parkedMs = 0; movingMs = 0; stoppedMs = 0; S.gear = "P"; }
 // A viagem fica guardada neste browser, para não se perder se a página recarregar (a demonstração não é guardada)
 function saveTrip(){
   if (S.speedSrc === "demo") return;
@@ -415,7 +463,7 @@ function updateChips(){
 
 const els = { speed:$("speed"), sweep:$("sSweep"), knob:$("sKnob"), pKnob:$("pKnob"), kw:$("kw"), fill:$("pFill"), state:$("state"),
   maxTxt:$("maxTxt"), avg:$("avgTxt"), dist:$("dist"), used:$("eUsed"), regen:$("eRegen"), pct:$("pctRegen") };
-let lastFrame = performance.now(), lastState = "", lastStats = 0, lastGear = "P";
+let lastFrame = performance.now(), lastState = "", lastStats = 0;
 function render(now){
   const k = 1 - Math.exp(-(now-lastFrame)/180); lastFrame = now;
   S.dSpeed += (S.speed - S.dSpeed)*k;
@@ -427,9 +475,6 @@ function render(now){
   els.sweep.setAttribute("d", arc(S_A0, a, BAND_R));
   els.sweep.style.opacity = v < 0.5 ? 0 : 1;
   const [kx,ky] = pt(a, BAND_R); els.knob.setAttribute("cx", kx.toFixed(1)); els.knob.setAttribute("cy", ky.toFixed(1));
-  // Com o GPS só se sabe se o carro está parado ou a andar: P parado, D em andamento (R e N não se detetam)
-  const g = v < 0.5 ? "P" : "D";
-  if (g !== lastGear){ lastGear = g; ["P","R","N","D"].forEach(x => $("g"+x).classList.toggle("on", x===g)); }
 
   // potência
   const p = S.dPower;
@@ -465,6 +510,52 @@ function render(now){
   }
   requestAnimationFrame(render);
 }
+
+/* ---------- Gráfico de potência (último minuto) ---------- */
+const HIST_N = 240;                // 60 s, um ponto a cada 250 ms
+const hist = [];
+function drawChart(){
+  const n = hist.length; if (!n) return;
+  const W = 600, H = 100;
+  let hi = 0, lo = 0; for (const v of hist){ if (v > hi) hi = v; if (v < lo) lo = v; }
+  // escala: arredonda para cima, com mínimo de +50 / −25 kW para o gráfico não "saltar" com valores pequenos
+  const top = Math.max(50, Math.ceil(hi/50)*50), bot = Math.max(25, Math.ceil(-lo/25)*25), span = top + bot;
+  const y = v => (top - v)/span*H, x = i => W - (n-1-i)*W/(HIST_N-1), z = y(0);
+  let pos = `M${x(0).toFixed(1)} ${z}`, neg = pos, line = "";
+  for (let i = 0; i < n; i++){
+    const X = x(i).toFixed(1), v = hist[i];
+    pos += ` L${X} ${y(Math.max(v,0)).toFixed(1)}`;
+    neg += ` L${X} ${y(Math.min(v,0)).toFixed(1)}`;
+    line += (i ? " L" : "M") + X + " " + y(v).toFixed(1);
+  }
+  pos += ` L${W} ${z} Z`; neg += ` L${W} ${z} Z`;
+  $("cPos").setAttribute("d", pos); $("cNeg").setAttribute("d", neg); $("cLine").setAttribute("d", line);
+  $("cZero").setAttribute("y1", z); $("cZero").setAttribute("y2", z);
+  $("cMax").textContent = "+" + top; $("cMin").textContent = "−" + bot;
+  $("cZeroLbl").style.top = z + "%";
+  const hpx = $("cZero").ownerSVGElement.clientHeight || 60;          // esconde o "0" se ficar colado a "+máx" ou "−mín"
+  $("cZeroLbl").hidden = z/100*hpx < 14 || (100-z)/100*hpx < 14;
+  const last = hist[n-1], dot = $("cDot");
+  dot.style.top = y(last) + "%";
+  dot.style.setProperty("--dot", last > IDLE_KW ? "var(--orange)" : last < -IDLE_KW ? "var(--regen)" : "#fff");
+  $("peak").innerHTML = `pico <b>+${Math.round(hi)}</b> / <i>−${Math.round(-lo)}</i> kW`;
+}
+
+// recolhe um ponto a cada 250 ms (temporizador próprio, para o eixo do tempo ser certo mesmo que o ecrã abrande)
+setInterval(() => { hist.push(S.power); if (hist.length > HIST_N) hist.shift(); if (document.visibilityState === "visible") drawChart(); }, 250);
+
+/* ---------- Modos de condução ---------- */
+const MODES = { sport:"SPORT", eco:"ECO", comfort:"COMFORT" };
+function setMode(m){
+  if (!MODES[m]) m = "sport";
+  document.body.dataset.mode = m;
+  $("modeLbl").textContent = MODES[m];
+  document.querySelectorAll(".modes button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
+  try{ localStorage.setItem("voltMode", m); }catch(e){}
+}
+document.querySelectorAll(".modes button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.m)));
+let savedMode = "sport"; try{ savedMode = localStorage.getItem("voltMode") || "sport"; }catch(e){}
+setMode(savedMode);
 
 /* ---------- Ecrã sempre ligado / ecrã inteiro ---------- */
 let wakeLock = null;
