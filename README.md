@@ -4,6 +4,7 @@ Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do
 
 ## O que tem
 
+- **Personalizado**: emblema **HXN · Model Y** no topo, e o cálculo da potência usa o peso e a aerodinâmica do Model Y.
 - Dois discos de vidro ("liquid glass") sobre luz colorida em movimento:
   - **Velocidade** de 0 a 300 km/h, com arco que acende com a velocidade, zona vermelha a partir de 250, velocidade máxima e o modo de condução.
   - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja) e regeneração para a esquerda até 100 kW (azul), com ícones que acendem. Mostra também o consumo médio em Wh/km e a **mudança engrenada (1 a 8)**, que sobe e desce com a velocidade: 1 até 20 km/h, 2 até 40, 3 até 60, 4 até 85, 5 até 110, 6 até 140, 7 até 180 e 8 acima disso.

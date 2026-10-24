@@ -1,5 +1,5 @@
 // Funciona sem rede: tenta sempre a versão nova primeiro e usa a guardada só se não houver ligação.
-const C = "volt-v5";
+const C = "volt-v7";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-512.png"];
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll(FILES))); });
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n !== C).map(n => caches.delete(n))))));

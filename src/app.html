@@ -60,6 +60,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;mi
 .modes button:not([aria-pressed="true"]){background:transparent;box-shadow:none;color:var(--muted)}
 .clock{font-family:var(--f-num);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
 .right{display:flex;align-items:center;gap:10px}
+/* emblema pessoal */
+.lefthead{display:flex;align-items:center;gap:10px;min-width:0}
+.brand{gap:8px;padding:6px 14px 6px 10px}
+.brand svg{width:22px;height:22px;flex:none}
+.brand b{font-family:var(--f-num);font-weight:700;font-size:15px;letter-spacing:.14em}
+.brand span{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;white-space:nowrap}
 /* ícones dos botões */
 .ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:none;flex:none}
 #btnDemo .ic path{fill:currentColor;stroke:none}
@@ -72,7 +78,6 @@ body[data-ui="icons"] .controls button{width:46px;height:46px;padding:0;display:
 /* vista Limpa: esconde as opções e deixa os mostradores, o gráfico e a viagem */
 body[data-ui="clean"] .controls, body[data-ui="clean"] .note, body[data-ui="clean"] header .chips,
 body[data-ui="clean"] header .modes{display:none}
-body[data-ui="clean"] header{justify-content:flex-end}
 body[data-ui="clean"] .bar{justify-content:center}
 body[data-ui="clean"] .viewbtn{opacity:.55}
 
@@ -181,7 +186,7 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
   .cluster{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:10px}
   header{flex-wrap:wrap;row-gap:8px}
   .modes{order:3;width:100%;justify-content:center;box-sizing:border-box}
-  #chipPower{display:none}
+  .chips{display:none}
   .chart{padding:8px 14px 10px;border-radius:18px}
   .chart-body{height:44px}
   .modes button{flex:1;padding:7px 6px}
@@ -201,9 +206,15 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 
 <div class="app">
   <header>
+    <div class="lefthead">
+    <div class="pill glass brand" aria-label="HXN, Tesla Model Y">
+      <svg viewBox="0 0 512 512" aria-hidden="true"><g fill="#e82127"><path d="M126 118Q256 76 386 118L381 131Q256 94 131 131Z"/><path d="M84 160Q256 104 428 160L414 190Q256 140 98 190Z"/><path d="M150 186Q222 186 244 214L244 418Q256 434 268 418L268 214Q290 186 362 186Q310 168 256 167Q202 168 150 186Z"/></g></svg>
+      <b>HXN</b><span>Model Y</span>
+    </div>
     <div class="pill glass chips">
       <span class="chip" id="chipSpeed"><i></i><span id="chipSpeedTxt">Demo</span></span>
       <span class="chip" id="chipPower"><i></i><span id="chipPowerTxt">Potência calculada</span></span>
+    </div>
     </div>
     <div class="pill glass modes" role="group" aria-label="Modo de condução">
       <button data-m="sport" aria-pressed="true">Sport</button>
@@ -346,9 +357,10 @@ const REDLINE = 250;              // início da zona vermelha
 const P_MAX = 300, R_MAX = 100;   // kW de consumo e de regeneração no fim da escala
 const IDLE_KW = 1.5;              // abaixo disto = neutro
 
-// Modelo físico aproximado de um Model 3/Y: a potência é calculada a partir da velocidade GPS
+// Modelo físico aproximado do Tesla Model Y: a potência é calculada a partir da velocidade GPS
 // (aceleração + resistência do ar + atrito dos pneus), descontando o rendimento do motor e da regeneração.
-const CAR = { mass:1950, crr:0.011, cda:0.53, rho:1.2, effDrive:0.90, effRegen:0.75, maxRegenKw:90, auxKw:0.4 };
+const CAR = { mass:2000, crr:0.011, cda:0.59,   // Model Y: ~1980 kg + condutor; Cx 0,23 × área frontal 2,58 m²
+              rho:1.2, effDrive:0.90, effRegen:0.75, maxRegenKw:90, auxKw:0.4 };
 
 /* ---------- Estado ---------- */
 const S = { speed:0, power:0, dSpeed:0, dPower:0, speedSrc:"demo", vmax:0, distKm:0, used:0, regen:0 };
