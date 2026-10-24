@@ -10,7 +10,8 @@ Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do
 - **Modos de condução** no topo: **Sport** (vermelho), **Eco** (verde) e **Comfort** (azul). Mudam as cores do arco de velocidade, da luz de fundo e dos botões. O modo escolhido fica guardado.
 - **Gráfico de potência dos últimos 60 s**: laranja acima de zero (a consumir), azul abaixo (a regenerar), com os picos do último minuto. O botão **Gráfico** mostra ou oculta o gráfico (sem ele, os discos ficam maiores); a escolha fica guardada.
 - Viagem no rodapé: distância, kWh gastos, kWh regenerados, **consumo** da viagem (kWh gastos menos kWh regenerados), % recuperado e **tempo de viagem**.
-- Botões: GPS, Demo, Repor (viagem a zero), Gráfico e Ecrã inteiro.
+- **Som do motor** (botão **Som**): escolhe entre Boxer 6 estilo GT3, Boxer 6 Turbo, V8, V12 e Elétrico, e ajusta o volume. O som é sintetizado na hora (não são gravações): as rotações seguem a velocidade e a mudança de 1 a 8, o volume e o tom abrem quando aceleras, há um corte breve em cada passagem de caixa, estalos ao levantar o pé (GT3 e V8) e assobio do turbo (Turbo). O som só arranca depois de tocares num botão, como exigem os browsers; o motor escolhido e o volume ficam guardados.
+- Botões: GPS, Demo, Repor (viagem a zero), Gráfico, Som e Ecrã inteiro.
 - O GPS arranca sozinho ao abrir a app. Se o browser não der localização, passa para a demonstração.
 - O ecrã fica ligado e a app funciona sem internet depois de aberta uma vez.
 - Ecrã na horizontal (Tesla, tablet): discos lado a lado. Telemóvel ao alto: um por cima do outro.

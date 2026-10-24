@@ -122,17 +122,33 @@ body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;fil
 .axis{position:absolute;left:-42px;width:34px;text-align:right;font-family:var(--f-num);font-size:11px;color:var(--muted);transform:translateY(-50%);font-variant-numeric:tabular-nums}
 .cdot{position:absolute;right:-5px;top:50%;width:10px;height:10px;border-radius:50%;transform:translateY(-50%);background:#fff;box-shadow:0 0 12px 2px var(--dot,#fff)}
 
+/* painel do som */
+.soundpanel{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 32px));
+  border-radius:22px;padding:14px;display:grid;gap:10px;box-sizing:border-box;max-height:70vh;overflow:auto}
+.sp-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sp-head .t{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sp-list{display:grid;gap:6px}
+.sp-item{display:grid;gap:2px;text-align:left;border-radius:14px;padding:10px 14px;letter-spacing:0;text-transform:none}
+.sp-item b{font-size:14px;font-weight:700}
+.sp-item span{font-size:12px;color:var(--muted);font-weight:500}
+.sp-item[aria-checked="true"]{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 70%,#fff 10%),color-mix(in srgb,var(--accent) 35%,transparent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 0 20px color-mix(in srgb,var(--accent) 40%,transparent)}
+.sp-item[aria-checked="true"] span{color:rgba(255,255,255,.85)}
+.sp-vol{display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.sp-vol input{flex:1;accent-color:var(--accent)}
+.sp-note{margin:0;font-size:12px;color:var(--muted)}
+
 /* barra de baixo */
 .bar{border-radius:26px;padding:12px 14px 12px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px 22px;flex-wrap:wrap}
-.stats{display:flex;gap:26px;flex-wrap:wrap}
+.stats{display:flex;gap:20px;flex-wrap:wrap}
 .stat{display:grid;gap:1px}
 .stat .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .stat .v{font-family:var(--f-num);font-weight:500;font-size:22px;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
 .stat .v small{font-family:var(--f-ui);font-size:12px;color:var(--muted);margin-left:3px;font-weight:600}
 .stat.c .v{color:var(--orange)} .stat.r .v{color:var(--regen)}
-.controls{display:flex;gap:8px;flex-wrap:wrap}
+.controls{display:flex;gap:6px;flex-wrap:wrap}
 button{font-family:var(--f-ui);font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--fg);cursor:pointer;
-  border:0;border-radius:999px;padding:12px 20px;min-height:44px;position:relative;
+  border:0;border-radius:999px;padding:12px 15px;min-height:44px;position:relative;
   background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.12);
   transition:transform .15s ease, background .3s ease}
@@ -278,10 +294,18 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       <button id="btnDemo" aria-pressed="false">Demo</button>
       <button id="btnReset">Repor</button>
       <button id="btnChart" aria-pressed="true" aria-controls="chart">Gráfico</button>
+      <button id="btnSound" aria-pressed="false" aria-expanded="false" aria-controls="soundPanel">Som</button>
       <button id="btnFull">Ecrã inteiro</button>
     </div>
     <p class="note" id="note">A procurar sinal GPS…</p>
   </div>
+</div>
+
+<div class="soundpanel glass" id="soundPanel" role="dialog" aria-label="Som do motor" hidden>
+  <div class="sp-head"><span class="t">Som do motor</span><button id="soundOnOff" aria-pressed="false">Ligar som</button></div>
+  <div class="sp-list" id="soundList" role="radiogroup" aria-label="Motor"></div>
+  <label class="sp-vol" for="soundVol">Volume <input type="range" id="soundVol" min="0" max="100" value="60"></label>
+  <p class="sp-note">Som sintetizado na hora a imitar cada tipo de motor. As rotações seguem a velocidade e a mudança.</p>
 </div>
 
 <script>
@@ -485,6 +509,7 @@ function render(now){
   const v = S.dSpeed, a = sAngle(v);
   els.speed.textContent = Math.round(v);
   updateGear(v);
+  engineTick(now);
   els.sweep.setAttribute("d", arc(S_A0, a, BAND_R));
   els.sweep.style.opacity = v < 0.5 ? 0 : 1;
   const [kx,ky] = pt(a, BAND_R); els.knob.setAttribute("cx", kx.toFixed(1)); els.knob.setAttribute("cy", ky.toFixed(1));
@@ -579,11 +604,191 @@ function updateGear(v){
   while (g < 8 && v >= GEAR_UP[g]) g++;
   while (g > 1 && v < GEAR_UP[g-1] - GEAR_HYST) g--;
   if (g === gearNow) return;
+  const up = g > gearNow;
   gearNow = g;
+  if (eng) eng.shift(up);
   const el = $("gearNum");
   el.textContent = g;
   el.classList.remove("shift"); void el.getBBox(); el.classList.add("shift");   // pequena animação a cada mudança
 }
+
+/* ---------- Som do motor (sintetizado na hora com Web Audio, não são gravações) ---------- */
+// As rotações seguem a velocidade e a mudança (1 a 8): sobem dentro de cada mudança e caem a cada passagem.
+// A potência calculada faz de "acelerador": mais potência = mais volume e som mais aberto.
+const ENGINES = {
+  gt3:   { name:"Boxer 6 · estilo GT3", sub:"Atmosférico, até 9000 rpm, estalos ao levantar o pé",
+           cyl:6, idle:950, low:5200, red:9000, tone:["sawtooth","square"], drive:3.4, rasp:.9, pops:true },
+  turbo: { name:"Boxer 6 Turbo", sub:"Biturbo, mais grave, assobio do turbo e válvula de descarga",
+           cyl:6, idle:900, low:3400, red:7200, tone:["sawtooth","sawtooth"], drive:2.2, rasp:.35, turbo:true },
+  v8:    { name:"V8", sub:"Grave e irregular, com borbulhar",
+           cyl:8, idle:750, low:3000, red:7000, tone:["sawtooth","square"], drive:2.8, rasp:.45, burble:.55, pops:true },
+  v12:   { name:"V12", sub:"Suave e agudo",
+           cyl:12, idle:900, low:4500, red:8500, tone:["sawtooth","triangle"], drive:1.6, rasp:.25 },
+  ev:    { name:"Elétrico", sub:"Zumbido futurista, sem mudanças", ev:true },
+};
+const SOUND = { on:false, engine:"gt3", vol:.6 };
+try{ const sv = JSON.parse(localStorage.getItem("voltSound") || "null"); if (sv){ SOUND.engine = ENGINES[sv.engine] ? sv.engine : "gt3"; SOUND.vol = Math.min(Math.max(+sv.vol || .6, 0), 1); } }catch(e){}
+function saveSound(){ try{ localStorage.setItem("voltSound", JSON.stringify({engine:SOUND.engine, vol:SOUND.vol})); }catch(e){} }
+
+let AC = null, master = null, eng = null, noiseBuf = null;
+function audioInit(){
+  if (AC) return true;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  AC = new Ctx();
+  master = AC.createGain(); master.gain.value = SOUND.vol;
+  const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+  master.connect(comp).connect(AC.destination);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
+  return true;
+}
+const osc = (type, f) => { const o = AC.createOscillator(); o.type = type; o.frequency.value = f || 50; o.start(); return o; };
+const gain = v => { const g = AC.createGain(); g.gain.value = v; return g; };
+const noise = () => { const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true; s.start(); return s; };
+function biquad(type, f, q){ const b = AC.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q || 1; return b; }
+function shaper(k){
+  const n = 2048, c = new Float32Array(n);
+  for (let i = 0; i < n; i++){ const x = i*2/n - 1; c[i] = (1+k)*x/(1+k*Math.abs(x)); }
+  const w = AC.createWaveShaper(); w.curve = c; w.oversample = "2x"; return w;
+}
+
+// rotações a partir da velocidade e da mudança engrenada
+function engineRpm(def, v, g){
+  if (g <= 1) return def.idle + (def.red*0.82 - def.idle)*Math.min(v/GEAR_UP[1], 1);
+  const lo = GEAR_UP[g-1], hi = g < 8 ? GEAR_UP[g] : MAX_SPEED;
+  return def.low + (def.red*0.96 - def.low)*Math.min(Math.max((v-lo)/(hi-lo), 0), 1);
+}
+
+function buildEngine(key){
+  const def = ENGINES[key], all = [];
+  const out = gain(0); out.connect(master);
+  const keep = (...n) => { all.push(...n); return n[0]; };
+
+  if (def.ev){
+    const o1 = keep(osc("sine")), o2 = keep(osc("triangle")), o3 = keep(osc("sawtooth"));
+    const g3 = gain(.05), lp = biquad("lowpass", 2500, 5), mix = gain(.5);
+    o1.connect(mix); o2.connect(mix); o3.connect(g3).connect(mix); mix.connect(lp).connect(out);
+    return { def, out, all, shift(){},
+      set(v, g, thr){
+        const T = AC.currentTime, f = 70 + v*5.2;
+        o1.frequency.setTargetAtTime(f, T, .08); o2.frequency.setTargetAtTime(f*1.5, T, .08); o3.frequency.setTargetAtTime(f*3.01, T, .08);
+        lp.frequency.setTargetAtTime(1200 + thr*5000 + v*12, T, .1);
+        out.gain.setTargetAtTime(.10 + .45*thr + .18*Math.min(v/120, 1), T, .08);
+      } };
+  }
+
+  // corpo do som: fundamental (frequência de explosões), sub-harmónica e 2.º harmónico ligeiramente desafinado
+  const o1 = keep(osc(def.tone[0])), o2 = keep(osc(def.tone[1])), o3 = keep(osc("sawtooth"));
+  const g1 = gain(.55), g2 = gain(.35), g3 = gain(.18);
+  const body = gain(1);
+  o1.connect(g1).connect(body); o2.connect(g2).connect(body); o3.connect(g3).connect(body);
+  // aspereza do escape: ruído filtrado à volta dos harmónicos
+  const rn = keep(noise()), rbp = biquad("bandpass", 900, 2.5), rg = gain(.25*def.rasp);
+  rn.connect(rbp).connect(rg).connect(body);
+  const drive = shaper(def.drive), lp = biquad("lowpass", 1500, .9), am = gain(.8);
+  body.connect(drive).connect(lp).connect(am).connect(out);
+  // borbulhar do V8: modulação irregular do volume
+  let lfo = null, lfoG = null;
+  if (def.burble){ lfo = keep(osc("square", 10)); lfoG = gain(.3*def.burble); lfo.connect(lfoG).connect(am.gain); }
+  // turbo: assobio que sobe com a carga
+  let wh = null, whG = null;
+  if (def.turbo){ wh = keep(osc("sine", 2500)); whG = gain(0); const whBp = biquad("bandpass", 3000, 8); wh.connect(whBp).connect(whG).connect(out); }
+
+  let lastThr = 0, lastPop = 0, boost = 0;
+  function burst(t, f, dur, amp, type){
+    const s = AC.createBufferSource(); s.buffer = noiseBuf;
+    const b = biquad(type || "bandpass", f, 1.4), g = gain(0);
+    s.connect(b).connect(g).connect(out);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(amp, t + .004); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    s.start(t, Math.random()); s.stop(t + dur + .05);
+  }
+  return { def, out, all,
+    set(v, g, thr, now){
+      const T = AC.currentTime, rpm = engineRpm(def, v, g), f = rpm/60*def.cyl/2, frac = (rpm - def.idle)/(def.red - def.idle);
+      o1.frequency.setTargetAtTime(f, T, .03); o2.frequency.setTargetAtTime(f/2, T, .03); o3.frequency.setTargetAtTime(f*2.01, T, .03);
+      rbp.frequency.setTargetAtTime(f*3.5, T, .05);
+      lp.frequency.setTargetAtTime(500 + thr*4200 + frac*3200, T, .06);
+      out.gain.setTargetAtTime(.16 + .55*thr + .2*frac, T, .05);
+      if (lfo) lfo.frequency.setTargetAtTime(rpm/60/2*0.97, T, .05);
+      if (wh){
+        boost += ((thr > .3 ? thr : 0) - boost)*.04;
+        wh.frequency.setTargetAtTime(1800 + boost*4000 + frac*800, T, .1);
+        whG.gain.setTargetAtTime(boost*.05, T, .1);
+        if (lastThr > .5 && thr < .1 && now - lastPop > 1500){ lastPop = now; burst(T, 2500, .45, .25, "highpass"); boost = 0; }   // válvula de descarga
+      }
+      if (def.pops && lastThr > .35 && thr < .05 && rpm > 3500 && now - lastPop > 1200){   // estalos ao levantar o pé
+        lastPop = now;
+        let t = T + .05; const n = 4 + Math.floor(Math.random()*5);
+        for (let i = 0; i < n; i++){ burst(t, 700 + Math.random()*900, .05 + Math.random()*.05, .5 + Math.random()*.4); t += .04 + Math.random()*.14; }
+      }
+      lastThr = thr;
+    },
+    shift(up){   // corte breve de volume na passagem de caixa
+      const T = AC.currentTime, cur = out.gain.value;
+      out.gain.cancelScheduledValues(T);
+      out.gain.setValueAtTime(cur*(up ? .3 : .6), T);
+      out.gain.linearRampToValueAtTime(cur, T + .14);
+    } };
+}
+function stopEngine(){
+  if (!eng) return;
+  const e = eng; eng = null;
+  const T = AC.currentTime;
+  e.out.gain.cancelScheduledValues(T); e.out.gain.setTargetAtTime(0, T, .08);
+  setTimeout(() => { e.all.forEach(n => { try{ n.stop(); }catch(_){} }); e.out.disconnect(); }, 500);
+}
+function startEngine(){
+  if (!audioInit()){ note("Este browser não permite som."); return; }
+  if (AC.state === "suspended") AC.resume();
+  stopEngine();
+  eng = buildEngine(SOUND.engine);
+}
+function engineTick(now){
+  if (!eng) return;
+  const p = S.dPower, thr = Math.min(Math.max(p/120, 0), 1);
+  eng.set(S.dSpeed, gearNow, thr, now);
+}
+
+// painel de escolha
+function renderSoundPanel(){
+  $("soundList").innerHTML = Object.entries(ENGINES).map(([k, d]) =>
+    `<button class="sp-item" role="radio" data-e="${k}" aria-checked="${k === SOUND.engine}"><b>${d.name}</b><span>${d.sub}</span></button>`).join("");
+  $("soundOnOff").textContent = SOUND.on ? "Desligar som" : "Ligar som";
+  $("soundOnOff").setAttribute("aria-pressed", String(SOUND.on));
+  $("btnSound").setAttribute("aria-pressed", String(SOUND.on));
+  $("soundVol").value = Math.round(SOUND.vol*100);
+}
+function setSound(on){
+  SOUND.on = on;
+  if (on) startEngine(); else stopEngine();
+  renderSoundPanel();
+  if (on) note(`Som: ${ENGINES[SOUND.engine].name}`);
+}
+function placePanel(){
+  const bar = document.querySelector(".bar").getBoundingClientRect();
+  $("soundPanel").style.bottom = (window.innerHeight - bar.top + 10) + "px";
+}
+function togglePanel(open){
+  const p = $("soundPanel");
+  if (open === undefined) open = p.hidden;
+  p.hidden = !open; $("btnSound").setAttribute("aria-expanded", String(open));
+  if (open){ renderSoundPanel(); placePanel(); }
+}
+$("btnSound").addEventListener("click", e => { e.stopPropagation(); togglePanel(); });
+$("soundOnOff").addEventListener("click", () => setSound(!SOUND.on));
+$("soundList").addEventListener("click", e => {
+  const b = e.target.closest(".sp-item"); if (!b) return;
+  SOUND.engine = b.dataset.e; saveSound(); setSound(true);   // escolher um motor liga logo o som
+});
+$("soundVol").addEventListener("input", e => {
+  SOUND.vol = e.target.value/100; saveSound();
+  if (master) master.gain.setTargetAtTime(SOUND.vol, AC.currentTime, .05);
+});
+document.addEventListener("click", e => { if (!$("soundPanel").hidden && !e.target.closest("#soundPanel, #btnSound")) togglePanel(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("soundPanel").hidden) togglePanel(false); });
+window.addEventListener("resize", () => { if (!$("soundPanel").hidden) placePanel(); });
+renderSoundPanel();
 
 /* ---------- Modos de condução ---------- */
 const MODES = { sport:"SPORT", eco:"ECO", comfort:"COMFORT" };
