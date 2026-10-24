@@ -1,0 +1,10 @@
+{
+  "name": "Volt Velocímetro",
+  "short_name": "Volt",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0a0e13",
+  "theme_color": "#0a0e13",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

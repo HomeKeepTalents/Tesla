@@ -1,0 +1,493 @@
+<!doctype html><html lang="pt"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}*{box-sizing:border-box}[hidden]{display:none!important}</style>
+</head><body>
+<title>Volt Velocímetro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;500;600;700&family=Manrope:wght@500;600;700&display=swap">
+<style>
+/* Layout: dois discos de vidro (velocidade | potência) a flutuar sobre luz colorida em movimento; barra de vidro em baixo.
+   Liquid glass: vidro translúcido desfocado, reflexo no topo, aro que refrata a luz. A luz de fundo aquece com a velocidade
+   e muda de cor com o estado (laranja a consumir, azul a regenerar). Visual escuro fixo. */
+:root{
+  color-scheme:dark;
+  --bg:#06070a; --fg:#f6f7fb; --muted:rgba(235,238,245,.58); --faint:rgba(255,255,255,.1);
+  --red:#ff3b3f; --orange:#ff8a3c; --amber:#ffc04d; --regen:#38b6ff; --violet:#7b5cff;
+  --glass:rgba(255,255,255,.07); --glass-hi:rgba(255,255,255,.16); --glass-line:rgba(255,255,255,.2);
+  --glow:var(--orange);
+  --f-num:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-ui:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);margin:0;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body[data-s="regen"]{--glow:var(--regen)}
+body[data-s="idle"]{--glow:var(--violet)}
+
+/* luz por trás do vidro */
+.ambient{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;will-change:transform;transition:background 1.2s ease, opacity 1.2s ease}
+.b1{width:52vmax;height:52vmax;left:-12vmax;top:-6vmax;background:var(--red);opacity:calc(.22 + var(--heat,0)*.5);animation:drift1 22s ease-in-out infinite alternate}
+.b2{width:46vmax;height:46vmax;right:-10vmax;top:8vmax;background:var(--glow);opacity:.45;animation:drift2 26s ease-in-out infinite alternate}
+.b3{width:40vmax;height:40vmax;left:28vmax;bottom:-22vmax;background:var(--violet);opacity:.32;animation:drift3 30s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(14vmax,10vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-12vmax,8vmax) scale(.9)}}
+@keyframes drift3{to{transform:translate(-10vmax,-12vmax) scale(1.2)}}
+.ambient::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(6,7,10,.55) 100%)}
+
+.app{position:relative;z-index:1;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:12px;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* vidro: base comum */
+.glass{position:relative;background:linear-gradient(145deg,var(--glass-hi),var(--glass) 45%,rgba(255,255,255,.03));
+  -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -18px 40px rgba(0,0,0,.18), 0 24px 60px rgba(0,0,0,.45)}
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.2px;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.65),rgba(255,255,255,.06) 35%,rgba(255,255,255,.04) 65%,rgba(255,255,255,.4));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+/* topo */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.pill{border-radius:999px;padding:8px 16px;display:flex;align-items:center;gap:14px}
+.chip{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
+.chip.live i{background:#4ade80;box-shadow:0 0 10px #4ade80}
+.chip.demo i{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.mode{font-family:var(--f-num);font-weight:600;font-size:13px;letter-spacing:.28em;color:var(--fg)}
+.mode b{color:var(--red);font-weight:700}
+.clock{font-family:var(--f-num);font-weight:500;font-size:18px;font-variant-numeric:tabular-nums}
+
+/* discos */
+.cluster{min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:2vw}
+.dial{min-height:0;min-width:0;container-type:size;display:flex;align-items:center;justify-content:center}
+.disc{width:min(100cqw,100cqh);height:min(100cqw,100cqh);border-radius:50%}
+.disc::before{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(90% 55% at 35% 6%, rgba(255,255,255,.2), transparent 60%),
+             radial-gradient(60% 40% at 70% 100%, color-mix(in srgb, var(--glow) 22%, transparent), transparent 70%)}
+.disc svg{position:absolute;inset:4%;width:92%;height:92%;overflow:visible}
+svg text{font-family:var(--f-num)}
+.track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:16;stroke-linecap:round}
+.zone{fill:none;stroke-width:16;stroke-linecap:round}
+.sweep{fill:none;stroke:url(#sweepGrad);stroke-width:16;stroke-linecap:round;filter:url(#glow)}
+.pfill{fill:none;stroke-width:16;stroke-linecap:round;filter:url(#glow)}
+.knob{fill:#fff;filter:url(#glowStrong)}
+.t-minor{stroke:rgba(255,255,255,.28);stroke-width:2;stroke-linecap:round}
+.t-major{stroke:rgba(255,255,255,.85);stroke-width:3;stroke-linecap:round}
+.t-red{stroke:var(--red);stroke-width:3;stroke-linecap:round}
+.t-lbl{fill:rgba(255,255,255,.8);font-weight:500;font-size:20px;text-anchor:middle;dominant-baseline:central}
+.t-lbl.red{fill:var(--red)}
+.t-lbl.s{font-size:16px}
+.big{fill:var(--fg);font-weight:300;text-anchor:middle;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.sub{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:700;text-anchor:middle;letter-spacing:.2em}
+.dim{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:.06em}
+.gear{font-weight:600;font-size:24px;text-anchor:middle;fill:rgba(255,255,255,.28);transition:fill .3s, font-size .3s}
+.gear.on{fill:var(--fg);font-size:30px;filter:url(#glow)}
+.gear-bg{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.14);stroke-width:1}
+.ico{opacity:.4;transition:opacity .4s}
+.ico-regen{stroke:var(--regen);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ico-regen .head{fill:var(--regen);stroke:none}
+.ico-power{fill:var(--orange)}
+body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;filter:url(#glow)}
+.state{font-family:var(--f-ui);font-size:14px;font-weight:700;letter-spacing:.22em;text-anchor:middle;transition:fill .4s}
+
+/* barra de baixo */
+.bar{border-radius:26px;padding:12px 14px 12px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px 22px;flex-wrap:wrap}
+.stats{display:flex;gap:26px;flex-wrap:wrap}
+.stat{display:grid;gap:1px}
+.stat .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.stat .v{font-family:var(--f-num);font-weight:500;font-size:22px;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
+.stat .v small{font-family:var(--f-ui);font-size:12px;color:var(--muted);margin-left:3px;font-weight:600}
+.stat.c .v{color:var(--orange)} .stat.r .v{color:var(--regen)}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:var(--f-ui);font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--fg);cursor:pointer;
+  border:0;border-radius:999px;padding:12px 20px;min-height:44px;position:relative;
+  background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4), inset 0 0 0 1px rgba(255,255,255,.12);
+  transition:transform .15s ease, background .3s ease}
+button[aria-pressed="true"]{background:linear-gradient(160deg,color-mix(in srgb,var(--red) 85%,#fff 15%),color-mix(in srgb,var(--red) 55%,transparent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 0 24px color-mix(in srgb,var(--red) 55%,transparent)}
+button:active{transform:scale(.96)}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.note{font-size:13px;color:var(--muted);margin:0;flex-basis:100%;text-align:center;min-height:16px}
+
+/* telemóvel ao alto */
+@media (orientation:portrait){
+  .cluster{grid-template-columns:1fr;grid-template-rows:1fr 1fr;gap:10px}
+  .mode{display:none}
+  .bar{padding:12px 14px;border-radius:22px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 12px;width:100%}
+  .stat .v{font-size:18px}
+  .controls{width:100%;flex-wrap:nowrap;gap:6px}
+  .controls button{flex:1;font-size:12px;padding:10px 6px;min-width:0}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{background:rgba(22,24,32,.85)}
+}
+@media (prefers-reduced-motion:reduce){.blob{animation:none}*{transition:none!important}}
+</style>
+
+<div class="ambient" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<div class="app">
+  <header>
+    <div class="pill glass">
+      <span class="chip" id="chipSpeed"><i></i><span id="chipSpeedTxt">Demo</span></span>
+      <span class="chip" id="chipPower"><i></i><span id="chipPowerTxt">Potência calculada</span></span>
+    </div>
+    <div class="pill glass mode"><b>●</b> SPORT</div>
+    <div class="pill glass clock" id="clock">--:--</div>
+  </header>
+
+  <div class="cluster">
+    <!-- Velocímetro -->
+    <div class="dial">
+      <div class="disc glass">
+        <svg viewBox="0 0 400 400" aria-label="Velocidade">
+          <defs>
+            <linearGradient id="sweepGrad" gradientUnits="userSpaceOnUse" x1="40" y1="330" x2="360" y2="110">
+              <stop offset="0" stop-color="#ffc04d"/><stop offset=".5" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3b3f"/>
+            </linearGradient>
+            <linearGradient id="powerGrad" gradientUnits="userSpaceOnUse" x1="200" y1="40" x2="340" y2="300">
+              <stop offset="0" stop-color="#ffc04d"/><stop offset=".55" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3b3f"/>
+            </linearGradient>
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path class="track" id="sTrack"/>
+          <path class="zone" id="sRedZone" stroke="var(--red)" opacity=".3"/>
+          <g id="sTicks"></g>
+          <path class="sweep" id="sSweep"/>
+          <circle class="knob" id="sKnob" r="9" cx="0" cy="0"/>
+          <text class="big" id="speed" x="200" y="226" font-size="90">0</text>
+          <text class="sub" x="200" y="262">KM/H</text>
+          <text class="dim" id="maxTxt" x="200" y="300">MÁX 0</text>
+          <rect class="gear-bg" x="128" y="334" width="144" height="40" rx="20"/>
+          <g aria-label="Mudança">
+            <text class="gear on" id="gP" x="146" y="364">P</text>
+            <text class="gear" id="gR" x="182" y="364">R</text>
+            <text class="gear" id="gN" x="218" y="364">N</text>
+            <text class="gear" id="gD" x="254" y="364">D</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Potência -->
+    <div class="dial">
+      <div class="disc glass">
+        <svg viewBox="0 0 400 400" aria-label="Potência da bateria">
+          <path class="track" id="pTrack"/>
+          <path class="zone" id="pRegenZone" stroke="var(--regen)" opacity=".14"/>
+          <path class="zone" id="pHotZone" stroke="var(--red)" opacity=".2"/>
+          <g id="pTicks"></g>
+          <path class="pfill" id="pFill"/>
+          <circle class="knob" id="pKnob" r="9" cx="200" cy="40"/>
+          <text class="state" id="state" x="200" y="152" fill="var(--muted)">NEUTRO</text>
+          <text class="big" id="kw" x="200" y="230" font-size="84">0</text>
+          <text class="sub" x="200" y="266">KW</text>
+          <text class="dim" id="avgTxt" x="200" y="302">— Wh/km</text>
+          <!-- ícones: regeneração (seta a recarregar) e potência (raio) -->
+          <g class="ico ico-regen" transform="translate(76 322)" aria-label="Regeneração">
+            <path d="M0 -10 A10 10 0 1 1 -8.7 -5"/>
+            <path class="head" d="M-1 -15 L6 -10 L-1 -5 Z"/>
+            <path class="head" d="M1.5 -5.5 L-3.5 1.5 H0 L-1.5 6 L3.5 -1 H0 Z"/>
+          </g>
+          <g class="ico ico-power" transform="translate(324 322)" aria-label="Potência">
+            <path d="M3 -13 L-8 2 H-0.5 L-3 13 L8 -2 H0.5 Z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar glass">
+    <div class="stats">
+      <div class="stat"><span class="l">Distância</span><span class="v"><span id="dist">0.0</span><small>km</small></span></div>
+      <div class="stat c"><span class="l">Gasto</span><span class="v"><span id="eUsed">0.00</span><small>kWh</small></span></div>
+      <div class="stat r"><span class="l">Regenerado</span><span class="v"><span id="eRegen">0.00</span><small>kWh</small></span></div>
+      <div class="stat"><span class="l">Recuperado</span><span class="v"><span id="pctRegen">0</span><small>%</small></span></div>
+      <div class="stat"><span class="l">Tempo</span><span class="v"><span id="tripTime">0:00</span><small id="tripUnit">min</small></span></div>
+    </div>
+    <div class="controls">
+      <button id="btnGps" aria-pressed="false">GPS</button>
+      <button id="btnDemo" aria-pressed="false">Demo</button>
+      <button id="btnReset">Repor</button>
+      <button id="btnFull">Ecrã inteiro</button>
+    </div>
+    <p class="note" id="note">A procurar sinal GPS…</p>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- Configuração ---------- */
+const MAX_SPEED = 300;            // km/h no mostrador
+const REDLINE = 250;              // início da zona vermelha
+const P_MAX = 300, R_MAX = 100;   // kW de consumo e de regeneração no fim da escala
+const IDLE_KW = 1.5;              // abaixo disto = neutro
+
+// Modelo físico aproximado de um Model 3/Y: a potência é calculada a partir da velocidade GPS
+// (aceleração + resistência do ar + atrito dos pneus), descontando o rendimento do motor e da regeneração.
+const CAR = { mass:1950, crr:0.011, cda:0.53, rho:1.2, effDrive:0.90, effRegen:0.75, maxRegenKw:90, auxKw:0.4 };
+
+/* ---------- Estado ---------- */
+const S = { speed:0, power:0, dSpeed:0, dPower:0, speedSrc:"demo", vmax:0, distKm:0, used:0, regen:0 };
+const $ = id => document.getElementById(id);
+
+/* ---------- Geometria ---------- */
+const C = 200, rad = d => d*Math.PI/180;
+const pt = (a,r) => [C + r*Math.cos(rad(a)), C + r*Math.sin(rad(a))];
+function arc(a1,a2,r){
+  if (a2 < a1) [a1,a2] = [a2,a1];
+  if (a2-a1 < 0.05) a2 = a1 + 0.05;
+  const [x1,y1]=pt(a1,r), [x2,y2]=pt(a2,r);
+  return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${a2-a1>180?1:0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+function tick(a, r1, r2, cls){ const [x1,y1]=pt(a,r1),[x2,y2]=pt(a,r2); return `<line class="${cls}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`; }
+function label(a, r, txt, cls){ const [x,y]=pt(a,r); return `<text class="${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${txt}</text>`; }
+
+const BAND_R = 168;
+// Velocímetro: 0 em baixo à esquerda, 300 em baixo à direita, 150 no topo
+const S_A0 = 135, S_SWEEP = 270;
+const sAngle = v => S_A0 + S_SWEEP*Math.min(Math.max(v,0),MAX_SPEED)/MAX_SPEED;
+// Potência: 0 no topo; consumo no sentido dos ponteiros, regeneração ao contrário
+const P_TOP = 270, P_SPAN = 120;
+const pAngle = p => p >= 0 ? P_TOP + P_SPAN*Math.min(p,P_MAX)/P_MAX : P_TOP - P_SPAN*Math.min(-p,R_MAX)/R_MAX;
+
+(function build(){
+  // velocidade
+  $("sTrack").setAttribute("d", arc(S_A0, S_A0+S_SWEEP, BAND_R));
+  $("sRedZone").setAttribute("d", arc(sAngle(REDLINE), sAngle(MAX_SPEED), BAND_R));
+  let h = "";
+  for (let v=0; v<=MAX_SPEED; v+=10){
+    const a = sAngle(v), major = v%50===0, red = v>=REDLINE;
+    h += tick(a, BAND_R-20, BAND_R-(major?36:28), red ? "t-red" : major ? "t-major" : "t-minor");
+    if (major) h += label(a, BAND_R-64, v, "t-lbl" + (red?" red":""));
+  }
+  $("sTicks").innerHTML = h;
+
+  // potência
+  $("pTrack").setAttribute("d", arc(pAngle(-R_MAX), pAngle(P_MAX), BAND_R));
+  $("pRegenZone").setAttribute("d", arc(pAngle(-R_MAX), P_TOP-2, BAND_R));
+  $("pHotZone").setAttribute("d", arc(pAngle(200), pAngle(P_MAX), BAND_R));
+  h = tick(P_TOP, BAND_R-20, BAND_R-40, "t-major");
+  for (let p=50; p<=P_MAX; p+=50){ const a=pAngle(p), major=p%100===0; h += tick(a, BAND_R-20, BAND_R-(major?36:28), p>200?"t-red":major?"t-major":"t-minor"); if (major) h += label(a, BAND_R-62, p, "t-lbl s" + (p>200?" red":"")); }
+  for (let p=25; p<=R_MAX; p+=25){ const a=pAngle(-p), major=p%50===0; h += tick(a, BAND_R-20, BAND_R-(major?36:28), major?"t-major":"t-minor"); if (major) h += label(a, BAND_R-62, p, "t-lbl s"); }
+  $("pTicks").innerHTML = h;
+})();
+
+/* ---------- Estimativa de potência a partir do GPS ---------- */
+function estimatePower(v, a){ // v m/s, a m/s²
+  const roll = v>0.3 ? CAR.mass*9.81*CAR.crr : 0;
+  const wheelKw = (CAR.mass*a + roll + 0.5*CAR.rho*CAR.cda*v*v)*v/1000;
+  let batt = wheelKw >= 0 ? wheelKw/CAR.effDrive : Math.max(wheelKw*CAR.effRegen, -CAR.maxRegenKw);
+  if (v < 2 && batt < 0) batt = 0;
+  return batt + CAR.auxKw;
+}
+
+/* ---------- Entrada de dados ---------- */
+let lastSampleT = 0, lastV = 0, accel = 0;
+function pushSpeed(kmh, t){
+  const dt = lastSampleT ? (t-lastSampleT)/1000 : 0;
+  lastSampleT = t;
+  const v = kmh/3.6;
+  if (dt > 0 && dt < 5){
+    accel = 0.6*accel + 0.4*Math.max(-9, Math.min(9, (v-lastV)/dt));
+    S.distKm += ((v+lastV)/2)*dt/1000;
+  }
+  lastV = v; S.speed = kmh; S.vmax = Math.max(S.vmax, kmh);
+  setPower(estimatePower(v, accel), dt);
+}
+function setPower(kw, dt){
+  S.power = kw;
+  if (dt > 0 && dt < 5){ if (kw > 0) S.used += kw*dt/3600; else S.regen += -kw*dt/3600; }
+}
+
+/* ---------- GPS ---------- */
+let gpsWatch = null, gpsPrev = null;
+function haversine(a,b){
+  const dLat=rad(b.lat-a.lat), dLon=rad(b.lon-a.lon);
+  const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+  return 2*6371000*Math.asin(Math.sqrt(h));
+}
+function startGps(){
+  if (!("geolocation" in navigator)){ note("Este browser não dá acesso à localização. A mostrar demonstração."); return; }
+  stopDemo(); note("A procurar sinal GPS…");
+  try{
+    gpsWatch = navigator.geolocation.watchPosition(pos => {
+      const c = pos.coords, cur = {lat:c.latitude, lon:c.longitude, t:pos.timestamp};
+      let ms = (c.speed != null && !Number.isNaN(c.speed)) ? c.speed : null;
+      if (ms == null && gpsPrev){ const dt=(cur.t-gpsPrev.t)/1000; if (dt>0) ms = haversine(gpsPrev,cur)/dt; }
+      gpsPrev = cur;
+      if (ms == null) return;
+      if (ms < 0.5) ms = 0;
+      S.speedSrc = "gps"; pushSpeed(ms*3.6, performance.now());
+      note(`GPS ativo · precisão ±${Math.round(c.accuracy)} m`); updateChips();
+    }, err => {
+      gpsWatch = null;
+      note((err.code===1 ? "Sem autorização para usar a localização." : "Não foi possível obter sinal GPS.") + " A mostrar demonstração.");
+      startDemo();
+    }, {enableHighAccuracy:true, maximumAge:0, timeout:20000});
+  }catch(e){ note("A localização está bloqueada nesta página. A mostrar demonstração."); startDemo(); return; }
+  S.speedSrc = "gps"; updateChips(); keepAwake();
+}
+function stopGps(){ if (gpsWatch!=null){ navigator.geolocation.clearWatch(gpsWatch); gpsWatch=null; } gpsPrev=null; }
+
+/* ---------- Demonstração ---------- */
+let demoTimer = null, demoT0 = 0;
+function demoSpeed(t){
+  const c = t % 40;
+  if (c < 7)  return 125*(1-Math.exp(-c/2.6));
+  if (c < 20) return 118 + 6*Math.sin(c*0.9);
+  if (c < 30) return Math.max(0, 118 - (c-20)*12.5);
+  if (c < 33) return 0;
+  return 55*(1-Math.exp(-(c-33)/1.6));
+}
+function startDemo(){
+  stopGps(); if (demoTimer) return;
+  saveTrip(); resetTrip();
+  S.speedSrc = "demo"; demoT0 = performance.now(); updateChips();
+  demoTimer = setInterval(() => pushSpeed(demoSpeed((performance.now()-demoT0)/1000), performance.now()), 200);
+}
+function stopDemo(){ if (!demoTimer) return; clearInterval(demoTimer); demoTimer=null; loadTrip(); }
+
+/* ---------- Tempo de viagem ---------- */
+// Conta enquanto o carro anda; paragens curtas (semáforos, trânsito) até 3 minutos também contam.
+// Se ficar parado mais de 10 minutos depois disso, a próxima condução começa uma viagem nova.
+const TRIP_KEY = "voltTrip", NEW_TRIP_AFTER = 10*60e3, STOP_PAUSE = 3*60e3;
+let tripMs = 0, tripOn = false, stoppedMs = 0, parkedMs = 0, tripLast = performance.now(), tripSaved = 0;
+function tripTick(now){
+  let dt = now - tripLast; tripLast = now;
+  if (dt <= 0) return;
+  dt = Math.min(dt, 30*60e3);   // página em segundo plano: continua a contar, até 30 min de cada vez
+  const moving = S.speed > 1;
+  stoppedMs = moving ? 0 : stoppedMs + dt;
+  const driving = moving || (tripOn && stoppedMs < STOP_PAUSE);
+  if (driving){
+    if (parkedMs > NEW_TRIP_AFTER && tripOn){ resetTrip(); note("Viagem nova: o carro esteve estacionado mais de 10 minutos."); }
+    parkedMs = 0; tripOn = true; tripMs += dt;
+  } else parkedMs += dt;
+}
+function showTrip(){
+  const sec = Math.floor(tripMs/1000), h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), x = sec%60;
+  $("tripTime").textContent = h ? `${h}:${String(m).padStart(2,"0")}` : `${m}:${String(x).padStart(2,"0")}`;
+  $("tripUnit").textContent = h ? "h" : "min";
+}
+function resetTrip(){ Object.assign(S,{vmax:0,distKm:0,used:0,regen:0}); tripMs = 0; tripOn = false; stoppedMs = 0; parkedMs = 0; }
+// A viagem fica guardada neste browser, para não se perder se a página recarregar (a demonstração não é guardada)
+function saveTrip(){
+  if (S.speedSrc === "demo") return;
+  try{ localStorage.setItem(TRIP_KEY, JSON.stringify({vmax:S.vmax, distKm:S.distKm, used:S.used, regen:S.regen, tripMs, at:Date.now()})); }catch(e){}
+}
+function loadTrip(){
+  resetTrip();
+  try{
+    const t = JSON.parse(localStorage.getItem(TRIP_KEY) || "null");
+    if (t && Date.now() - t.at < 6*3600e3){ Object.assign(S,{vmax:t.vmax, distKm:t.distKm, used:t.used, regen:t.regen}); tripMs = t.tripMs || 0; tripOn = tripMs > 0; parkedMs = Date.now() - t.at; }
+  }catch(e){}
+}
+
+/* ---------- Ecrã ---------- */
+function note(t){ $("note").textContent = t; }
+function updateChips(){
+  $("chipSpeed").className = "chip " + (S.speedSrc==="gps" ? "live" : "demo");
+  $("chipSpeedTxt").textContent = S.speedSrc==="gps" ? "GPS" : "Demo";
+  $("btnGps").setAttribute("aria-pressed", String(S.speedSrc==="gps"));
+  $("btnDemo").setAttribute("aria-pressed", String(S.speedSrc==="demo"));
+}
+
+const els = { speed:$("speed"), sweep:$("sSweep"), knob:$("sKnob"), pKnob:$("pKnob"), kw:$("kw"), fill:$("pFill"), state:$("state"),
+  maxTxt:$("maxTxt"), avg:$("avgTxt"), dist:$("dist"), used:$("eUsed"), regen:$("eRegen"), pct:$("pctRegen") };
+let lastFrame = performance.now(), lastState = "", lastStats = 0, lastGear = "P";
+function render(now){
+  const k = 1 - Math.exp(-(now-lastFrame)/180); lastFrame = now;
+  S.dSpeed += (S.speed - S.dSpeed)*k;
+  S.dPower += (S.power - S.dPower)*k;
+
+  // velocidade
+  const v = S.dSpeed, a = sAngle(v);
+  els.speed.textContent = Math.round(v);
+  els.sweep.setAttribute("d", arc(S_A0, a, BAND_R));
+  els.sweep.style.opacity = v < 0.5 ? 0 : 1;
+  const [kx,ky] = pt(a, BAND_R); els.knob.setAttribute("cx", kx.toFixed(1)); els.knob.setAttribute("cy", ky.toFixed(1));
+  // Com o GPS só se sabe se o carro está parado ou a andar: P parado, D em andamento (R e N não se detetam)
+  const g = v < 0.5 ? "P" : "D";
+  if (g !== lastGear){ lastGear = g; ["P","R","N","D"].forEach(x => $("g"+x).classList.toggle("on", x===g)); }
+
+  // potência
+  const p = S.dPower;
+  const st = p > IDLE_KW ? "consume" : p < -IDLE_KW ? "regen" : "idle";
+  const col = st==="regen" ? "var(--regen)" : st==="consume" ? (p>150 ? "var(--red)" : "var(--orange)") : "var(--muted)";
+  if (st !== lastState){
+    lastState = st; document.body.dataset.s = st;   // muda a cor da luz por trás do vidro
+    els.state.textContent = st==="consume" ? "CONSUMO" : st==="regen" ? "REGENERAÇÃO" : "NEUTRO";
+  }
+  els.state.setAttribute("fill", col);
+  els.kw.textContent = Math.abs(p) < 0.05 ? "0" : Math.abs(p).toFixed(Math.abs(p)<10?1:0);
+  els.fill.setAttribute("d", arc(P_TOP, pAngle(p), BAND_R));
+  els.fill.style.stroke = st==="consume" ? "url(#powerGrad)" : col;
+  els.fill.style.opacity = st==="idle" ? 0 : 1;
+  const [px,py] = pt(pAngle(p), BAND_R); els.pKnob.setAttribute("cx", px.toFixed(1)); els.pKnob.setAttribute("cy", py.toFixed(1));
+  tripTick(now);
+
+  if (now - lastStats > 250){
+    lastStats = now;
+    els.maxTxt.textContent = "MÁX " + Math.round(S.vmax);
+    const net = S.used - S.regen;
+    els.avg.textContent = S.distKm > 0.05 ? `${Math.round(net*1000/S.distKm)} Wh/km` : "— Wh/km";
+    els.dist.textContent = S.distKm.toFixed(1);
+    els.used.textContent = S.used.toFixed(2);
+    els.regen.textContent = S.regen.toFixed(2);
+    els.pct.textContent = S.used > 0 ? Math.round(S.regen/S.used*100) : 0;
+    showTrip();
+    document.body.style.setProperty("--heat", Math.min(S.dSpeed/200, 1).toFixed(2));   // mais velocidade = luz vermelha mais forte
+    if (now - tripSaved > 5000){ tripSaved = now; saveTrip(); }
+    const d = new Date(); $("clock").textContent = d.toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
+  }
+  requestAnimationFrame(render);
+}
+
+/* ---------- Ecrã sempre ligado / ecrã inteiro ---------- */
+let wakeLock = null;
+async function keepAwake(){
+  try{ if ("wakeLock" in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release",()=>wakeLock=null); } }catch(e){}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState==="visible" && S.speedSrc!=="demo") keepAwake();
+  if (document.visibilityState==="hidden") saveTrip();
+});
+async function toggleFull(){
+  try{
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  }catch(e){ note("Este browser não permite ecrã inteiro aqui."); }
+}
+
+/* ---------- Botões e arranque ---------- */
+$("btnGps").addEventListener("click", startGps);
+$("btnDemo").addEventListener("click", () => { startDemo(); note("Demonstração: arranque, cruzeiro e travagem com regeneração."); });
+$("btnReset").addEventListener("click", () => { resetTrip(); saveTrip(); note("Viagem reposta a zero."); });
+$("btnFull").addEventListener("click", toggleFull);
+if (!document.documentElement.requestFullscreen) $("btnFull").hidden = true;
+
+// Arranca logo com o GPS; se não houver localização, mostra a demonstração
+startDemo();
+requestAnimationFrame(render);
+startGps();
+})();
+</script>
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
+</body></html>
