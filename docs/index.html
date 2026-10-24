@@ -149,6 +149,19 @@ body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;fil
 .sp-item[aria-checked="true"]{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 70%,#fff 10%),color-mix(in srgb,var(--accent) 35%,transparent));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 0 20px color-mix(in srgb,var(--accent) 40%,transparent)}
 .sp-item[aria-checked="true"] span{color:rgba(255,255,255,.85)}
+.sp-opts{display:grid;gap:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,.1)}
+.sp-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;border-radius:14px;padding:10px 14px;
+  letter-spacing:0;text-transform:none;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.sp-toggle[aria-pressed]{background:rgba(255,255,255,.06)}
+.sp-tt{display:grid;gap:2px}
+.sp-tt b{font-size:14px;font-weight:700}
+.sp-tt span{font-size:12px;color:var(--muted);font-weight:500}
+.sw{flex:none;width:46px;height:28px;border-radius:999px;background:rgba(255,255,255,.18);position:relative;transition:background .25s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .25s}
+.sp-toggle[aria-checked="true"] .sw{background:var(--accent)}
+.sp-toggle[aria-checked="true"] .sw::after{transform:translateX(18px)}
+.sp-toggle:disabled{opacity:.4;cursor:default}
 .sp-vol{display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .sp-vol input{flex:1;accent-color:var(--accent)}
 .sp-note{margin:0;font-size:12px;color:var(--muted)}
@@ -321,6 +334,14 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 <div class="soundpanel glass" id="soundPanel" role="dialog" aria-label="Som do motor" hidden>
   <div class="sp-head"><span class="t">Som do motor</span><button id="soundOnOff" aria-pressed="false">Ligar som</button></div>
   <div class="sp-list" id="soundList" role="radiogroup" aria-label="Motor"></div>
+  <div class="sp-opts">
+    <button class="sp-toggle" id="optPops" role="switch" aria-checked="true">
+      <span class="sp-tt"><b>Estalos</b><span>Crepitar ao levantar o pé e nas mudanças</span></span><span class="sw" aria-hidden="true"></span>
+    </button>
+    <button class="sp-toggle" id="optValves" role="switch" aria-checked="true">
+      <span class="sp-tt"><b>Válvulas de escape</b><span id="valvesSub">Abertas: mais alto e mais grave</span></span><span class="sw" aria-hidden="true"></span>
+    </button>
+  </div>
   <label class="sp-vol" for="soundVol">Volume <input type="range" id="soundVol" min="0" max="100" value="60"></label>
   <p class="sp-note">Som sintetizado na hora a imitar cada tipo de motor. As rotações seguem a velocidade e a mudança.</p>
 </div>
@@ -675,6 +696,7 @@ function synthFactory(){
       this.boost = 0; this.wph = 0; this.bov = 0;
       this.peak = 0; this.lifted = false; this.overrun = 0; this.overrunLen = 1;
       this.popQ = 0; this.popGap = 0; this.voices = [];
+      this.popsOn = true; this.valves = true;
       this.dc = [0,0,0,0];
     }
     rnd(){ this.seed = (this.seed*1664525 + 1013904223) >>> 0; return this.seed/4294967296; }
@@ -696,14 +718,18 @@ function synthFactory(){
         // levantou o pé: crepitar durante alguns segundos, mais forte no início
         this.lifted = true;
         this.overrunLen = this.overrun = this.sr*c.popTime*(.7 + .6*this.rnd());
-        this.popQ += 2 + Math.floor(this.rnd()*3);
+        if (this.popsOn) this.popQ += 2 + Math.floor(this.rnd()*3); else this.overrun = 0;
         if (c.turbo && this.boost > .25) this.bov = 1;              // válvula de descarga do turbo
       }
       if (load > .25){ this.lifted = false; this.overrun = 0; }
       this.rpmT = rpm; this.loadT = load;
     }
+    options(o){
+      if (o.pops != null){ this.popsOn = o.pops; if (!o.pops){ this.popQ = 0; this.overrun = 0; this.voices = []; } }
+      if (o.valves != null) this.valves = o.valves;
+    }
     trigger(t){
-      const c = this.c; if (!c) return;
+      const c = this.c; if (!c || !this.popsOn) return;
       const [a, b] = c.shiftPops;
       if (t === "up") this.popQ += a + Math.floor(this.rnd()*(b - a + 1));      // estalo na passagem de caixa
       if (t === "down" && this.rpm > 2500) this.popQ += 1 + Math.floor(this.rnd()*b);   // e ao reduzir
@@ -715,7 +741,7 @@ function synthFactory(){
       if (this.voices.length > 10) this.voices.shift();
       const f = lo + (hi - lo)*this.rnd();
       this.voices.push({
-        e: big ? 3.2 + 1.8*this.rnd() : 1.2 + 1.3*this.rnd(),
+        e: (big ? 3.2 + 1.8*this.rnd() : 1.2 + 1.3*this.rnd())*(this.valves ? 1 : .2),
         dec: Math.exp(-1/(this.sr*(big ? .028 : .007 + .006*this.rnd()))),
         pan: .15 + .7*this.rnd(),
         q: this.coef(f, f*.9), y1:0, y2:0,
@@ -768,7 +794,7 @@ function synthFactory(){
           }
           const D = this.combD[k], len = B.buf.length;
           const old = B.buf[(B.w - D + len) % len];
-          const yc = y + c.combFb*old;
+          const yc = y + c.combFb*(this.valves ? 1 : .45)*old;
           B.buf[B.w] = yc; B.w = (B.w + 1) % len;
           if (k === 0) out0 = yc; else out1 = yc;
         }
@@ -817,14 +843,14 @@ function synthFactory(){
 const WORKLET_SRC = `const EngineSynth = (${synthFactory.toString()})();
 class EngineProc extends AudioWorkletProcessor {
   constructor(){ super(); this.s = new EngineSynth(sampleRate);
-    this.port.onmessage = e => { const d = e.data; if (d.cfg) this.s.config(d.cfg); if (d.rpm != null) this.s.set(d.rpm, d.load); if (d.ev) this.s.trigger(d.ev); }; }
+    this.port.onmessage = e => { const d = e.data; if (d.cfg) this.s.config(d.cfg); if (d.opts) this.s.options(d.opts); if (d.rpm != null) this.s.set(d.rpm, d.load); if (d.ev) this.s.trigger(d.ev); }; }
   process(_, outs){ const o = outs[0]; this.s.process(o[0], o[1] || o[0], o[0].length); return true; }
 }
 registerProcessor("engine-synth", EngineProc);`;
 
-const SOUND = { on:false, engine:"gt3", vol:.6 };
-try{ const sv = JSON.parse(localStorage.getItem("voltSound") || "null"); if (sv){ SOUND.engine = ENGINES[sv.engine] ? sv.engine : "gt3"; SOUND.vol = Math.min(Math.max(+sv.vol || .6, 0), 1); } }catch(e){}
-function saveSound(){ try{ localStorage.setItem("voltSound", JSON.stringify({engine:SOUND.engine, vol:SOUND.vol})); }catch(e){} }
+const SOUND = { on:false, engine:"gt3", vol:.6, pops:true, valves:true };
+try{ const sv = JSON.parse(localStorage.getItem("voltSound") || "null"); if (sv){ SOUND.engine = ENGINES[sv.engine] ? sv.engine : "gt3"; SOUND.vol = Math.min(Math.max(+sv.vol || .6, 0), 1); SOUND.pops = sv.pops !== false; SOUND.valves = sv.valves !== false; } }catch(e){}
+function saveSound(){ try{ localStorage.setItem("voltSound", JSON.stringify({engine:SOUND.engine, vol:SOUND.vol, pops:SOUND.pops, valves:SOUND.valves})); }catch(e){} }
 
 let AC = null, master = null, eng = null, noiseBuf = null, reverbIR = null, workletReady = null;
 function audioInit(){
@@ -867,7 +893,7 @@ function buildElectric(){
   const g3 = gain(.05), lp = biquad("lowpass", 2500, 5), mix = gain(.5);
   o1.connect(mix); o2.connect(mix); o3.connect(g3).connect(mix); mix.connect(lp).connect(out);
   return { def:ENGINES.ev, out, stop(){ all.forEach(n => n.stop()); },
-    shift(){},
+    shift(){}, options(){},
     set(v, g, thr){
       const T = AC.currentTime, f = 70 + v*5.2;
       o1.frequency.setTargetAtTime(f, T, .08); o2.frequency.setTargetAtTime(f*1.5, T, .08); o3.frequency.setTargetAtTime(f*3.01, T, .08);
@@ -887,9 +913,10 @@ async function buildCar(key){
     const synth = new (synthFactory())(AC.sampleRate);
     src = AC.createScriptProcessor(1024, 0, 2);
     src.onaudioprocess = e => synth.process(e.outputBuffer.getChannelData(0), e.outputBuffer.getChannelData(1), e.outputBuffer.length);
-    send = m => { if (m.cfg) synth.config(m.cfg); if (m.rpm != null) synth.set(m.rpm, m.load); if (m.ev) synth.trigger(m.ev); };
+    send = m => { if (m.cfg) synth.config(m.cfg); if (m.opts) synth.options(m.opts); if (m.rpm != null) synth.set(m.rpm, m.load); if (m.ev) synth.trigger(m.ev); };
   }
   send({ cfg: def });
+  send({ opts: { pops: SOUND.pops, valves: SOUND.valves } });
   // cadeia de escape: saturação, filtro que abre com a carga, "corpo" nos graves e presença
   const drive = shaper(def.drive), lp = biquad("lowpass", def.cut[0], .7);
   const lowShelf = biquad("lowshelf", 140, 1, def.body), presence = biquad("peaking", 2800, .9, 2);
@@ -897,20 +924,32 @@ async function buildCar(key){
   src.connect(drive).connect(lowShelf).connect(presence).connect(lp).connect(out);
   const verb = AC.createConvolver(); verb.buffer = reverbIR;
   const wet = gain(.16); lp.connect(verb).connect(wet).connect(out);
-  out.gain.setTargetAtTime(.9, AC.currentTime, .3);
+  // válvulas abertas: mais alto, mais graves e mais brilho; fechadas: abafado e mais baixo
+  let valves = SOUND.valves;
+  const level = () => valves ? .9 : .5;
+  const applyValves = () => {
+    const T = AC.currentTime;
+    out.gain.setTargetAtTime(level(), T, .15);
+    lowShelf.gain.setTargetAtTime(valves ? def.body : def.body - 5, T, .15);
+    presence.gain.setTargetAtTime(valves ? 2 : -3, T, .15);
+  };
+  applyValves();
   return { def, out,
     stop(){ try{ src.disconnect(); }catch(_){} },
+    options(o){ send({ opts:o }); if (o.valves != null){ valves = o.valves; applyValves(); } },
     set(v, g, thr){
       const rpm = engineRpm(def, v, g), frac = (rpm - def.idle)/(def.red - def.idle);
       send({ rpm, load: thr });
-      lp.frequency.setTargetAtTime(def.cut[0] + (def.cut[1] - def.cut[0])*Math.min(.25*frac + .75*thr*(.4 + .6*frac), 1), AC.currentTime, .05);
+      const open = Math.min(.25*frac + .75*thr*(.4 + .6*frac), 1)*(valves ? 1 : .4);
+      lp.frequency.setTargetAtTime(def.cut[0]*(valves ? 1 : .75) + (def.cut[1] - def.cut[0])*open, AC.currentTime, .05);
     },
     shift(up){
       send({ ev: up ? "up" : "down" });              // estalos ao subir e ao reduzir
       if (!up) return;
       const T = AC.currentTime;                        // corte de ignição na passagem de caixa
       out.gain.cancelScheduledValues(T);
-      out.gain.setValueAtTime(.9, T); out.gain.linearRampToValueAtTime(.25, T + .03); out.gain.linearRampToValueAtTime(.9, T + .16);
+      const lv = level();
+      out.gain.setValueAtTime(lv, T); out.gain.linearRampToValueAtTime(lv*.28, T + .03); out.gain.linearRampToValueAtTime(lv, T + .16);
     } };
 }
 function stopEngine(){
@@ -944,6 +983,10 @@ function renderSoundPanel(){
   $("soundOnOff").setAttribute("aria-pressed", String(SOUND.on));
   $("btnSound").setAttribute("aria-pressed", String(SOUND.on));
   $("soundVol").value = Math.round(SOUND.vol*100);
+  const ev = SOUND.engine === "ev";                       // o elétrico não tem estalos nem válvulas
+  $("optPops").setAttribute("aria-checked", String(SOUND.pops)); $("optPops").disabled = ev;
+  $("optValves").setAttribute("aria-checked", String(SOUND.valves)); $("optValves").disabled = ev;
+  $("valvesSub").textContent = SOUND.valves ? "Abertas: mais alto e mais grave" : "Fechadas: mais baixo e abafado";
 }
 function setSound(on){
   SOUND.on = on;
@@ -954,6 +997,7 @@ function setSound(on){
 function placePanel(){
   const bar = document.querySelector(".bar").getBoundingClientRect();
   $("soundPanel").style.bottom = (window.innerHeight - bar.top + 10) + "px";
+  $("soundPanel").style.maxHeight = Math.max(bar.top - 24, 200) + "px";   // usa todo o espaço acima do rodapé
 }
 function togglePanel(open){
   const p = $("soundPanel");
@@ -966,6 +1010,14 @@ $("soundOnOff").addEventListener("click", () => setSound(!SOUND.on));
 $("soundList").addEventListener("click", e => {
   const b = e.target.closest(".sp-item"); if (!b) return;
   SOUND.engine = b.dataset.e; saveSound(); setSound(true);   // escolher um motor liga logo o som
+});
+$("optPops").addEventListener("click", () => {
+  SOUND.pops = !SOUND.pops; saveSound(); renderSoundPanel();
+  if (eng) eng.options({ pops: SOUND.pops });
+});
+$("optValves").addEventListener("click", () => {
+  SOUND.valves = !SOUND.valves; saveSound(); renderSoundPanel();
+  if (eng) eng.options({ valves: SOUND.valves });
 });
 $("soundVol").addEventListener("input", e => {
   SOUND.vol = e.target.value/100; saveSound();
