@@ -10,7 +10,8 @@ cat <<'HEAD'
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="apple-mobile-web-app-title" content="HXN - Tesla">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}*{box-sizing:border-box}[hidden]{display:none!important}</style>
 </head><body>
 HEAD

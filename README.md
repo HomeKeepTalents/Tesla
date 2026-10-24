@@ -1,4 +1,4 @@
-# Volt Velocímetro
+# HXN - Tesla
 
 Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do GPS do browser. A potência da bateria, a consumir ou a regenerar, é calculada em tempo real a partir dessa velocidade.
 
@@ -6,7 +6,7 @@ Painel desportivo para o browser do Tesla e para telemóvel. A velocidade vem do
 
 - Dois discos de vidro ("liquid glass") sobre luz colorida em movimento:
   - **Velocidade** de 0 a 300 km/h, com arco que acende com a velocidade, zona vermelha a partir de 250, velocidade máxima e o modo de condução.
-  - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja) e regeneração para a esquerda até 100 kW (azul), com ícones que acendem. Mostra também o consumo médio em Wh/km.
+  - **Potência**: 0 no topo, consumo para a direita até 300 kW (laranja) e regeneração para a esquerda até 100 kW (azul), com ícones que acendem. Mostra também o consumo médio em Wh/km e a **mudança engrenada (1 a 8)**, que sobe e desce com a velocidade: 1 até 20 km/h, 2 até 40, 3 até 60, 4 até 85, 5 até 110, 6 até 140, 7 até 180 e 8 acima disso.
 - **Modos de condução** no topo: **Sport** (vermelho), **Eco** (verde) e **Comfort** (azul). Mudam as cores do arco de velocidade, da luz de fundo e dos botões. O modo escolhido fica guardado.
 - **Gráfico de potência dos últimos 60 s**: laranja acima de zero (a consumir), azul abaixo (a regenerar), com os picos do último minuto. O botão **Gráfico** mostra ou oculta o gráfico (sem ele, os discos ficam maiores); a escolha fica guardada.
 - Viagem no rodapé: distância, kWh gastos, kWh regenerados, **consumo** da viagem (kWh gastos menos kWh regenerados), % recuperado e **tempo de viagem**.

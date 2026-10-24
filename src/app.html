@@ -1,4 +1,4 @@
-<title>Volt Velocímetro</title>
+<title>HXN - Tesla</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;500;600;700&family=Manrope:wght@500;600;700&display=swap">
@@ -86,6 +86,11 @@ svg text{font-family:var(--f-num)}
 .dim{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:.06em}
 .modelbl{font-family:var(--f-ui);font-size:15px;font-weight:700;letter-spacing:.34em;text-anchor:middle;fill:var(--accent);filter:url(#glow);transition:fill .6s}
 .ico{opacity:.4;transition:opacity .4s}
+.gear-ring{fill:rgba(255,255,255,.07);stroke:var(--accent);stroke-width:2.5;filter:url(#glow);transition:stroke .6s}
+.gearnum{font-family:var(--f-num);font-weight:700;font-size:48px;text-anchor:middle;dominant-baseline:central;fill:var(--fg);
+  transform-box:fill-box;transform-origin:center}
+.gearnum.shift{animation:shift .35s ease-out}
+@keyframes shift{from{transform:scale(1.35);fill:var(--accent)}to{transform:scale(1)}}
 .ico-regen{stroke:var(--regen);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .ico-regen .head{fill:var(--regen);stroke:none}
 .ico-power{fill:var(--orange)}
@@ -209,7 +214,11 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
           <text class="state" id="state" x="200" y="152" fill="var(--muted)">NEUTRO</text>
           <text class="big" id="kw" x="200" y="230" font-size="84">0</text>
           <text class="sub" x="200" y="266">KW</text>
-          <text class="dim" id="avgTxt" x="200" y="302">— Wh/km</text>
+          <text class="dim" id="avgTxt" x="200" y="294">— Wh/km</text>
+          <g class="gearbox" aria-label="Mudança engrenada">
+            <circle class="gear-ring" cx="200" cy="346" r="34"/>
+            <text class="gearnum" id="gearNum" x="200" y="348">1</text>
+          </g>
           <!-- ícones: regeneração (seta a recarregar) e potência (raio) -->
           <g class="ico ico-regen" transform="translate(76 322)" aria-label="Regeneração">
             <path d="M0 -10 A10 10 0 1 1 -8.7 -5"/>
@@ -464,6 +473,7 @@ function render(now){
   // velocidade
   const v = S.dSpeed, a = sAngle(v);
   els.speed.textContent = Math.round(v);
+  updateGear(v);
   els.sweep.setAttribute("d", arc(S_A0, a, BAND_R));
   els.sweep.style.opacity = v < 0.5 ? 0 : 1;
   const [kx,ky] = pt(a, BAND_R); els.knob.setAttribute("cx", kx.toFixed(1)); els.knob.setAttribute("cy", ky.toFixed(1));
@@ -547,6 +557,22 @@ function setChart(on){
 $("btnChart").addEventListener("click", () => setChart($("chart").hidden));
 let savedChart = true; try{ savedChart = localStorage.getItem("voltChart") !== "0"; }catch(e){}
 setChart(savedChart);
+
+/* ---------- Mudança engrenada (1 a 8, conforme a velocidade) ---------- */
+// Velocidade (km/h) a partir da qual entra cada mudança: 1 até 20, 2 até 40, 3 até 60, 4 até 85,
+// 5 até 110, 6 até 140, 7 até 180 e 8 acima disso. Reduz só 3 km/h abaixo do limite, para não saltar.
+const GEAR_UP = [0, 20, 40, 60, 85, 110, 140, 180], GEAR_HYST = 3;
+let gearNow = 1;
+function updateGear(v){
+  let g = gearNow;
+  while (g < 8 && v >= GEAR_UP[g]) g++;
+  while (g > 1 && v < GEAR_UP[g-1] - GEAR_HYST) g--;
+  if (g === gearNow) return;
+  gearNow = g;
+  const el = $("gearNum");
+  el.textContent = g;
+  el.classList.remove("shift"); void el.getBBox(); el.classList.add("shift");   // pequena animação a cada mudança
+}
 
 /* ---------- Modos de condução ---------- */
 const MODES = { sport:"SPORT", eco:"ECO", comfort:"COMFORT" };
