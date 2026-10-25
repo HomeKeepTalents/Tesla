@@ -62,9 +62,9 @@ body[data-mode="comfort"]{--accent:#3b82f6; --mood:#2563eb; --sw0:#a5f3fc; --sw1
 /* topo */
 /* três colunas: as laterais com a mesma largura, para os modos ficarem sempre no centro do ecrã */
 header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;min-width:0}
-header > .lefthead{justify-self:start}
-header > .modes{justify-self:center}
-header > .right{justify-self:end}
+header > .lefthead{grid-column:1;justify-self:start}
+header > .modes{grid-column:2;justify-self:center}
+header > .right{grid-column:3;justify-self:end}
 .pill{border-radius:999px;padding:8px 16px;display:flex;align-items:center;gap:14px}
 .chip{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap}
 .chip i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
@@ -95,6 +95,9 @@ body[data-ui="clean"] .controls, body[data-ui="clean"] .note, body[data-ui="clea
 body[data-ui="clean"] header .modes{display:none}
 body[data-ui="clean"] .bar{justify-content:center}
 body[data-ui="clean"] .viewbtn{opacity:.55}
+/* vista Mínima: também esconde a barra de baixo (estatísticas e botões) */
+body[data-ui="minimal"] .bar, body[data-ui="minimal"] header .chips, body[data-ui="minimal"] header .modes{display:none}
+body[data-ui="minimal"] .viewbtn{opacity:.55}
 
 /* discos */
 .cluster{min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:2vw}
@@ -108,7 +111,6 @@ svg text{font-family:var(--f-num)}
 .track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:16;stroke-linecap:round}
 .zone{fill:none;stroke-width:16;stroke-linecap:round}
 .sweep{fill:none;stroke:url(#sweepGrad);stroke-width:16;stroke-linecap:round;filter:url(#glow)}
-.pfill{fill:none;stroke-width:16;stroke-linecap:round;filter:url(#glow)}
 .knob{fill:#fff;filter:url(#glowStrong)}
 .t-minor{stroke:rgba(255,255,255,.28);stroke-width:2;stroke-linecap:round}
 .t-major{stroke:rgba(255,255,255,.85);stroke-width:3;stroke-linecap:round}
@@ -118,19 +120,41 @@ svg text{font-family:var(--f-num)}
 .t-lbl.s{font-size:16px}
 .big{fill:var(--fg);font-weight:300;text-anchor:middle;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .sub{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:700;text-anchor:middle;letter-spacing:.2em}
+.dim.tach-eng{font-size:13px;letter-spacing:.12em}
 .dim{fill:var(--muted);font-family:var(--f-ui);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:.06em}
 .modelbl{font-family:var(--f-ui);font-size:15px;font-weight:700;letter-spacing:.34em;text-anchor:middle;fill:var(--accent);filter:url(#glow);transition:fill .6s}
-.ico{opacity:.4;transition:opacity .4s}
 .gear-ring{fill:rgba(255,255,255,.07);stroke:var(--accent);stroke-width:2.5;filter:url(#glow);transition:stroke .6s}
 .gearnum{font-family:var(--f-num);font-weight:700;font-size:48px;text-anchor:middle;dominant-baseline:central;fill:var(--fg);
   transform-box:fill-box;transform-origin:center}
 .gearnum.shift{animation:shift .35s ease-out}
+/* ---------- modo Comfort: mostradores ao estilo Mercedes-Benz ---------- */
+.mb, .lbl-mb{display:none}
+body[data-mode="comfort"] .mb{display:inline}
+body[data-mode="comfort"] .lbl-mb{display:inline;font-size:15px;font-weight:500;fill:#f2f4f8}
+body[data-mode="comfort"] .lbl-std, body[data-mode="comfort"] .track, body[data-mode="comfort"] .sweep,
+body[data-mode="comfort"] .knob, body[data-mode="comfort"] #speed, body[data-mode="comfort"] #rpmNum,
+body[data-mode="comfort"] .disc .sub, body[data-mode="comfort"] #maxTxt{display:none}
+body[data-mode="comfort"] .disc{
+  background:radial-gradient(circle at 50% 50%, #0d1428 0%, #070a14 62%, #04060c 100%);
+  box-shadow:0 0 0 3px rgba(232,236,244,.9), 0 0 0 6px rgba(70,80,100,.85), 0 0 60px 10px rgba(40,110,255,.45), inset 0 0 50px rgba(40,110,255,.25)}
+body[data-mode="comfort"] .disc::before{background:radial-gradient(70% 45% at 50% 0%, rgba(120,170,255,.16), transparent 70%)}
+body[data-mode="comfort"] .t-major{stroke:#f2f4f8;stroke-width:3}
+body[data-mode="comfort"] .t-minor{stroke:rgba(242,244,248,.6)}
+body[data-mode="comfort"] .t-lbl{fill:#f2f4f8;font-weight:500}
+body[data-mode="comfort"] .t-lbl.red{fill:#ff3348}
+body[data-mode="comfort"] .modelbl{fill:#8fb4ff}
+.mb-sector{fill:url(#mbFill)}
+.mb-trail{fill:url(#mbTrail)}
+.mb-needle{stroke:#ff4a3a;stroke-width:6;stroke-linecap:round;filter:url(#glowStrong)}
+.mb-needle-core{stroke:#fff3ef;stroke-width:1.8;stroke-linecap:round}
+.mb-hub{fill:#1b1f27;stroke:#c9d0da;stroke-width:2.5}
+.mb-digital{fill:#f2f4f8;font-family:var(--f-num);font-weight:500;font-size:30px;text-anchor:middle;font-variant-numeric:tabular-nums}
+.mb-unit{fill:#9aa6bb;font-family:var(--f-ui);font-size:13px;font-weight:600;text-anchor:middle;letter-spacing:.08em}
+
+/* luz de passagem de caixa: o anel pisca a vermelho perto da zona vermelha */
+.gear-ring.shiftlight{stroke:var(--red);animation:shiftBlink .2s steps(2) infinite}
+@keyframes shiftBlink{50%{stroke-opacity:.15}}
 @keyframes shift{from{transform:scale(1.35);fill:var(--accent)}to{transform:scale(1)}}
-.ico-regen{stroke:var(--regen);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.ico-regen .head{fill:var(--regen);stroke:none}
-.ico-power{fill:var(--orange)}
-body[data-s="regen"] .ico-regen, body[data-s="consume"] .ico-power{opacity:1;filter:url(#glow)}
-.state{font-family:var(--f-ui);font-size:14px;font-weight:700;letter-spacing:.22em;text-anchor:middle;transition:fill .4s}
 
 /* gráfico de potência */
 .app.no-chart{grid-template-rows:auto minmax(0,1fr) auto}
@@ -251,21 +275,29 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
             <linearGradient id="sweepGrad" gradientUnits="userSpaceOnUse" x1="40" y1="330" x2="360" y2="110">
               <stop class="sg0" offset="0"/><stop class="sg1" offset=".5"/><stop class="sg2" offset="1"/>
             </linearGradient>
-            <linearGradient id="powerGrad" gradientUnits="userSpaceOnUse" x1="200" y1="40" x2="340" y2="300">
-              <stop offset="0" stop-color="#ffc04d"/><stop offset=".55" stop-color="#ff8a3c"/><stop offset="1" stop-color="#ff3b3f"/>
-            </linearGradient>
             <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
             <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
+            <radialGradient id="mbFill" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="150">
+              <stop offset=".15" stop-color="#ff2a3d" stop-opacity="0"/><stop offset="1" stop-color="#ff2a3d" stop-opacity=".2"/>
+            </radialGradient>
+            <radialGradient id="mbTrail" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="150">
+              <stop offset=".1" stop-color="#ff3348" stop-opacity="0"/><stop offset="1" stop-color="#ff3348" stop-opacity=".55"/>
+            </radialGradient>
           </defs>
+          <path class="mb mb-sector" id="sSector"/><path class="mb mb-trail" id="sTrail"/>
           <path class="track" id="sTrack"/>
           <path class="zone" id="sRedZone" stroke="var(--red)" opacity=".3"/>
           <g id="sTicks"></g>
           <path class="sweep" id="sSweep"/>
           <circle class="knob" id="sKnob" r="9" cx="0" cy="0"/>
+          <g class="mb" id="sNeedle"><line class="mb-needle" x1="200" y1="226" x2="200" y2="52"/><line class="mb-needle-core" x1="200" y1="214" x2="200" y2="56"/></g>
+          <circle class="mb mb-hub" cx="200" cy="200" r="13"/>
+          <text class="mb mb-digital" id="sDigital" x="200" y="282">0</text>
+          <text class="mb mb-unit" x="200" y="302">km/h</text>
           <text class="big" id="speed" x="200" y="226" font-size="90">0</text>
           <text class="sub" x="200" y="262">KM/H</text>
           <text class="dim" id="maxTxt" x="200" y="300">MÁX 0</text>
@@ -274,32 +306,24 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       </div>
     </div>
 
-    <!-- Potência -->
+    <!-- Conta-rotações (escala conforme o motor escolhido) -->
     <div class="dial">
       <div class="disc glass">
-        <svg viewBox="0 0 400 400" aria-label="Potência da bateria">
-          <path class="track" id="pTrack"/>
-          <path class="zone" id="pRegenZone" stroke="var(--regen)" opacity=".14"/>
-          <path class="zone" id="pHotZone" stroke="var(--red)" opacity=".2"/>
-          <g id="pTicks"></g>
-          <path class="pfill" id="pFill"/>
-          <circle class="knob" id="pKnob" r="9" cx="200" cy="40"/>
-          <text class="state" id="state" x="200" y="152" fill="var(--muted)">NEUTRO</text>
-          <text class="big" id="kw" x="200" y="230" font-size="84">0</text>
-          <text class="sub" x="200" y="266">KW</text>
-          <text class="dim" id="avgTxt" x="200" y="294">— Wh/km</text>
+        <svg viewBox="0 0 400 400" aria-label="Conta-rotações">
+          <path class="track" id="tTrack"/>
+          <path class="zone" id="tRedZone" stroke="var(--red)" opacity=".3"/>
+          <path class="mb mb-sector" id="tSector"/><path class="mb mb-trail" id="tTrail"/>
+          <g id="tTicks"></g>
+          <path class="sweep" id="tSweep"/>
+          <circle class="knob" id="tKnob" r="9" cx="0" cy="0"/>
+          <g class="mb" id="tNeedle"><line class="mb-needle" x1="200" y1="226" x2="200" y2="52"/><line class="mb-needle-core" x1="200" y1="214" x2="200" y2="56"/></g>
+          <circle class="mb mb-hub" cx="200" cy="200" r="13"/>
+          <text class="big" id="rpmNum" x="200" y="214" font-size="62">0</text>
+          <text class="sub" x="200" y="246">RPM</text>
+          <text class="dim tach-eng" id="tachEng" x="200" y="280">—</text>
           <g class="gearbox" aria-label="Mudança engrenada">
-            <circle class="gear-ring" cx="200" cy="346" r="34"/>
+            <circle class="gear-ring" id="gearRing" cx="200" cy="346" r="34"/>
             <text class="gearnum" id="gearNum" x="200" y="348">1</text>
-          </g>
-          <!-- ícones: regeneração (seta a recarregar) e potência (raio) -->
-          <g class="ico ico-regen" transform="translate(76 322)" aria-label="Regeneração">
-            <path d="M0 -10 A10 10 0 1 1 -8.7 -5"/>
-            <path class="head" d="M-1 -15 L6 -10 L-1 -5 Z"/>
-            <path class="head" d="M1.5 -5.5 L-3.5 1.5 H0 L-1.5 6 L3.5 -1 H0 Z"/>
-          </g>
-          <g class="ico ico-power" transform="translate(324 322)" aria-label="Potência">
-            <path d="M3 -13 L-8 2 H-0.5 L-3 13 L8 -2 H0.5 Z"/>
           </g>
         </svg>
       </div>
@@ -369,7 +393,6 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 /* ---------- Configuração ---------- */
 const MAX_SPEED = 300;            // km/h no mostrador
 const REDLINE = 250;              // início da zona vermelha
-const P_MAX = 300, R_MAX = 100;   // kW de consumo e de regeneração no fim da escala
 const IDLE_KW = 1.5;              // abaixo disto = neutro
 
 // Modelo físico aproximado do Tesla Model Y: a potência é calculada a partir da velocidade GPS
@@ -397,9 +420,6 @@ const BAND_R = 168;
 // Velocímetro: 0 em baixo à esquerda, 300 em baixo à direita, 150 no topo
 const S_A0 = 135, S_SWEEP = 270;
 const sAngle = v => S_A0 + S_SWEEP*Math.min(Math.max(v,0),MAX_SPEED)/MAX_SPEED;
-// Potência: 0 no topo; consumo no sentido dos ponteiros, regeneração ao contrário
-const P_TOP = 270, P_SPAN = 120;
-const pAngle = p => p >= 0 ? P_TOP + P_SPAN*Math.min(p,P_MAX)/P_MAX : P_TOP - P_SPAN*Math.min(-p,R_MAX)/R_MAX;
 
 (function build(){
   // velocidade
@@ -409,18 +429,11 @@ const pAngle = p => p >= 0 ? P_TOP + P_SPAN*Math.min(p,P_MAX)/P_MAX : P_TOP - P_
   for (let v=0; v<=MAX_SPEED; v+=10){
     const a = sAngle(v), major = v%50===0, red = v>=REDLINE;
     h += tick(a, BAND_R-20, BAND_R-(major?36:28), red ? "t-red" : major ? "t-major" : "t-minor");
-    if (major) h += label(a, BAND_R-64, v, "t-lbl" + (red?" red":""));
+    if (major) h += label(a, BAND_R-64, v, "t-lbl lbl-std" + (red?" red":""));
+    if (v % 20 === 0) h += label(a, BAND_R-50, v, "t-lbl lbl-mb" + (red?" red":""));
   }
   $("sTicks").innerHTML = h;
 
-  // potência
-  $("pTrack").setAttribute("d", arc(pAngle(-R_MAX), pAngle(P_MAX), BAND_R));
-  $("pRegenZone").setAttribute("d", arc(pAngle(-R_MAX), P_TOP-2, BAND_R));
-  $("pHotZone").setAttribute("d", arc(pAngle(200), pAngle(P_MAX), BAND_R));
-  h = tick(P_TOP, BAND_R-20, BAND_R-40, "t-major");
-  for (let p=50; p<=P_MAX; p+=50){ const a=pAngle(p), major=p%100===0; h += tick(a, BAND_R-20, BAND_R-(major?36:28), p>200?"t-red":major?"t-major":"t-minor"); if (major) h += label(a, BAND_R-62, p, "t-lbl s" + (p>200?" red":"")); }
-  for (let p=25; p<=R_MAX; p+=25){ const a=pAngle(-p), major=p%50===0; h += tick(a, BAND_R-20, BAND_R-(major?36:28), major?"t-major":"t-minor"); if (major) h += label(a, BAND_R-62, p, "t-lbl s"); }
-  $("pTicks").innerHTML = h;
 })();
 
 /* ---------- Estimativa de potência a partir do GPS ---------- */
@@ -552,8 +565,19 @@ function updateChips(){
   $("btnDemo").setAttribute("aria-pressed", String(S.speedSrc==="demo"));
 }
 
-const els = { speed:$("speed"), sweep:$("sSweep"), knob:$("sKnob"), pKnob:$("pKnob"), kw:$("kw"), fill:$("pFill"), state:$("state"),
-  maxTxt:$("maxTxt"), avg:$("avgTxt"), dist:$("dist"), used:$("eUsed"), regen:$("eRegen"), pct:$("pctRegen") };
+// estilo Mercedes (modo Comfort): ponteiro vermelho a partir do centro e rasto iluminado atrás dele
+function wedge(a1, a2, r){
+  if (a2 - a1 < .3) return "";
+  const [x1,y1] = pt(a1, r), [x2,y2] = pt(a2, r);
+  return `M${C} ${C} L${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${a2-a1 > 180 ? 1 : 0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
+}
+function mbNeedle(k, ang){
+  $(k + "Needle").setAttribute("transform", `rotate(${(ang + 90).toFixed(2)} ${C} ${C})`);
+  $(k + "Sector").setAttribute("d", wedge(S_A0, ang, BAND_R - 16));
+  $(k + "Trail").setAttribute("d", wedge(Math.max(S_A0, ang - 28), ang, BAND_R - 16));
+}
+const els = { speed:$("speed"), sweep:$("sSweep"), knob:$("sKnob"), tSweep:$("tSweep"), tKnob:$("tKnob"), rpm:$("rpmNum"), ring:$("gearRing"),
+  maxTxt:$("maxTxt"), dist:$("dist"), used:$("eUsed"), regen:$("eRegen"), pct:$("pctRegen") };
 let lastFrame = performance.now(), lastState = "", lastStats = 0;
 function render(now){
   const k = 1 - Math.exp(-(now-lastFrame)/180); lastFrame = now;
@@ -568,29 +592,28 @@ function render(now){
   els.sweep.setAttribute("d", arc(S_A0, a, BAND_R));
   els.sweep.style.opacity = v < 0.5 ? 0 : 1;
   const [kx,ky] = pt(a, BAND_R); els.knob.setAttribute("cx", kx.toFixed(1)); els.knob.setAttribute("cy", ky.toFixed(1));
+  if (document.body.dataset.mode === "comfort"){ mbNeedle("s", a); $("sDigital").textContent = Math.round(v); }
 
-  // potência
+  // conta-rotações: as mesmas rotações que o som usa (caem a cada passagem de caixa)
+  S.dRpm = (S.dRpm || 0) + (currentRpm(v) - (S.dRpm || 0))*(1 - Math.exp(-(now - (S.lastT || now))/70)); S.lastT = now;
+  const ra = tachAngle(S.dRpm);
+  els.rpm.textContent = Math.round(S.dRpm/50)*50;
+  els.tSweep.setAttribute("d", arc(S_A0, ra, BAND_R));
+  els.tSweep.style.opacity = S.dRpm < 50 ? 0 : 1;
+  const [tx,ty] = pt(ra, BAND_R); els.tKnob.setAttribute("cx", tx.toFixed(1)); els.tKnob.setAttribute("cy", ty.toFixed(1));
+  if (document.body.dataset.mode === "comfort") mbNeedle("t", ra);
+  els.ring.classList.toggle("shiftlight", !tach.ev && S.dRpm > tach.red*.93);
+
+  // a luz por trás do vidro continua a mudar com a potência calculada
   const p = S.dPower;
   const st = p > IDLE_KW ? "consume" : p < -IDLE_KW ? "regen" : "idle";
-  const col = st==="regen" ? "var(--regen)" : st==="consume" ? (p>150 ? "var(--red)" : "var(--orange)") : "var(--muted)";
-  if (st !== lastState){
-    lastState = st; document.body.dataset.s = st;   // muda a cor da luz por trás do vidro
-    els.state.textContent = st==="consume" ? "CONSUMO" : st==="regen" ? "REGENERAÇÃO" : "NEUTRO";
-  }
-  els.state.setAttribute("fill", col);
-  els.kw.textContent = Math.abs(p) < 0.05 ? "0" : Math.abs(p).toFixed(Math.abs(p)<10?1:0);
-  els.fill.setAttribute("d", arc(P_TOP, pAngle(p), BAND_R));
-  els.fill.style.stroke = st==="consume" ? "url(#powerGrad)" : col;
-  els.fill.style.opacity = st==="idle" ? 0 : 1;
-  const [px,py] = pt(pAngle(p), BAND_R); els.pKnob.setAttribute("cx", px.toFixed(1)); els.pKnob.setAttribute("cy", py.toFixed(1));
+  if (st !== lastState){ lastState = st; document.body.dataset.s = st; }
   tripTick(now);
 
   if (now - lastStats > 250){
     lastStats = now;
     els.maxTxt.textContent = "MÁX " + Math.round(S.vmax);
     const net = S.used - S.regen;
-    const cons = S.distKm > 0.05 ? Math.round(net*1000/S.distKm) : null;   // consumo médio da viagem: energia líquida / distância
-    els.avg.textContent = cons != null ? `${cons} Wh/km` : "— Wh/km";
     $("tripCons").textContent = Math.max(net, 0).toFixed(2);   // consumo da viagem: kWh gastos menos kWh regenerados
     els.dist.textContent = S.distKm.toFixed(1);
     els.used.textContent = S.used.toFixed(2);
@@ -663,7 +686,7 @@ function updateGear(v){
   gearNow = g;
   if (eng) eng.shift(up);
   const el = $("gearNum");
-  el.textContent = g;
+  el.textContent = tach.ev ? "D" : g;
   el.classList.remove("shift"); void el.getBBox(); el.classList.add("shift");   // pequena animação a cada mudança
 }
 
@@ -1066,7 +1089,7 @@ $("btnSound").addEventListener("click", e => { e.stopPropagation(); togglePanel(
 $("soundOnOff").addEventListener("click", () => setSound(!SOUND.on));
 $("soundList").addEventListener("click", e => {
   const b = e.target.closest(".sp-item"); if (!b) return;
-  SOUND.engine = b.dataset.e; saveSound(); setSound(true);   // escolher um motor liga logo o som
+  SOUND.engine = b.dataset.e; saveSound(); buildTach(); setSound(true);   // escolher um motor liga logo o som e muda o conta-rotações
 });
 $("optPops").addEventListener("click", () => {
   SOUND.pops = !SOUND.pops; saveSound(); renderSoundPanel();
@@ -1085,6 +1108,33 @@ document.addEventListener("click", e => { if (!$("soundPanel").hidden && !e.comp
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("soundPanel").hidden) togglePanel(false); });
 window.addEventListener("resize", () => { if (!$("soundPanel").hidden) placePanel(); });
 renderSoundPanel();
+
+/* ---------- Conta-rotações: escala conforme o motor escolhido ---------- */
+const EV_RPM_PER_KMH = 65;   // Model Y: redução ~9:1 e rodas com ~2,3 m de perímetro
+const TACH_NAMES = { amg:"AMG GT 63", gt3:"911 GT3", svj:"AVENTADOR SVJ", huracan:"HURACÁN", f458:"458 ITALIA", supra:"SUPRA MK4", a45:"A45 S · 460 CV", ev:"ELÉTRICO" };
+let tach = { max:10000, red:9000, ev:false };
+const tachAngle = r => S_A0 + S_SWEEP*Math.min(Math.max(r, 0), tach.max)/tach.max;
+function currentRpm(v){
+  const def = ENGINES[SOUND.engine];
+  return !def || def.ev ? v*EV_RPM_PER_KMH : engineRpm(def, v, gearNow);
+}
+function buildTach(){
+  const def = ENGINES[SOUND.engine] || ENGINES.gt3;
+  // escala até ao milhar acima da zona vermelha (ex.: GT3 9000 → 0–10; AMG 7000 → 0–8)
+  tach = def.ev ? { max:20000, red:20000, ev:true } : { max:Math.ceil((def.red + 800)/1000)*1000, red:def.red, ev:false };
+  const minor = tach.ev ? 1000 : 500, major = tach.ev ? 2000 : 1000;
+  let h = "";
+  for (let r = 0; r <= tach.max; r += minor){
+    const a = tachAngle(r), big = r % major === 0, red = !tach.ev && r >= tach.red;
+    h += tick(a, BAND_R-20, BAND_R-(big?36:28), red ? "t-red" : big ? "t-major" : "t-minor");
+    if (big) h += label(a, BAND_R-62, r/1000, "t-lbl" + (red ? " red" : ""));
+  }
+  $("tTicks").innerHTML = h;
+  $("tTrack").setAttribute("d", arc(S_A0, S_A0+S_SWEEP, BAND_R));
+  $("tRedZone").setAttribute("d", tach.ev ? "" : arc(tachAngle(tach.red), tachAngle(tach.max), BAND_R));
+  $("tachEng").textContent = TACH_NAMES[SOUND.engine] || "";
+  $("gearNum").textContent = tach.ev ? "D" : gearNow;
+}
 
 /* ---------- Modos de condução ---------- */
 const MODES = { sport:"SPORT", eco:"ECO", comfort:"COMFORT" };
@@ -1122,21 +1172,22 @@ $("btnReset").addEventListener("click", () => { resetTrip(); saveTrip(); note("V
 $("btnFull").addEventListener("click", toggleFull);
 
 // Vista: Completa → Ícones → Limpa (fica guardada neste browser)
-const VIEWS = { full:"Vista completa", icons:"Vista só com ícones", clean:"Vista limpa: toca no botão de vista para voltar a ver as opções" };
+const VIEWS = { full:"Vista completa", icons:"Vista só com ícones", clean:"Vista limpa: toca no botão de vista para voltar a ver as opções", minimal:"Vista mínima" };
 function setView(v, announce){
   if (!VIEWS[v]) v = "full";
   document.body.dataset.ui = v;
-  $("btnView").setAttribute("aria-label", "Mudar a vista (agora: " + {full:"completa", icons:"ícones", clean:"limpa"}[v] + ")");
-  if (v === "clean") togglePanel(false);
+  $("btnView").setAttribute("aria-label", "Mudar a vista (agora: " + {full:"completa", icons:"ícones", clean:"limpa", minimal:"mínima"}[v] + ")");
+  if (v === "clean" || v === "minimal") togglePanel(false);
   try{ localStorage.setItem("voltView", v); }catch(e){}
   if (announce) note(VIEWS[v]);
 }
-$("btnView").addEventListener("click", () => setView({full:"icons", icons:"clean", clean:"full"}[document.body.dataset.ui] || "full", true));
+$("btnView").addEventListener("click", () => setView({full:"icons", icons:"clean", clean:"minimal", minimal:"full"}[document.body.dataset.ui] || "full", true));
 let savedView = "full"; try{ savedView = localStorage.getItem("voltView") || "full"; }catch(e){}
 setView(savedView, false);
 if (!document.documentElement.requestFullscreen) $("btnFull").hidden = true;
 
 // Arranca logo com o GPS; se não houver localização, mostra a demonstração
+buildTach();
 startDemo();
 requestAnimationFrame(render);
 startGps();
