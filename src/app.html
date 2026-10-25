@@ -711,6 +711,16 @@ const ENGINES = {
          jitter:.05, overrunJitter:.3, intake:.3, intakeOrder:2, turbo:true, whistle:3600, flutter:true,
          popRate:8, popTime:1.4, bigPop:.25, popBand:[400, 1800], shiftPops:[1, 2],
          drive:2.6, cut:[900, 7000], body:5 },
+  a45: { name:"Mercedes-AMG A45 S · 460 cv", sub:"4 cilindros 2.0 turbo reprogramado: rouco, turbo forte e os estalos mais agressivos",
+         cyl:4, idle:900, low:4200, red:7200,
+         // M139, 4 em linha (ordem 1-3-4-2): duas explosões por volta, entram no turbo twin-scroll alternadamente
+         events: fireEvery(4, [0,1]),
+         pipes:[[140,100,1.4],[420,240,.9]], comb:[2.6, 2.9], combFb:.45, tau:2.6, noise:.55, direct:.2, cylVar:.14,
+         jitter:.07, overrunJitter:.6, intake:.25, intakeOrder:2,
+         // reprogramado: mais pressão no turbo (assobio mais forte) e mapa de estalos agressivo
+         turbo:true, whistle:3200, whistleGain:.06,
+         popRate:20, popTime:3.0, bigPop:.45, popBand:[300, 1600], shiftPops:[2, 3],
+         drive:3.0, cut:[900, 7500], body:5 },
   ev:  { name:"Elétrico", sub:"Zumbido futurista, sem mudanças", ev:true },
 };
 
@@ -857,7 +867,7 @@ function synthFactory(){
         if (c.turbo){
           this.boost += ((load > .3 && rpm > 2500 ? load : 0) - this.boost)*(1/(sr*.5));
           this.wph += 2*Math.PI*((c.whistle || 2800) + this.boost*4200)/sr; if (this.wph > 6.2832) this.wph -= 6.2832;
-          mono += Math.sin(this.wph)*this.boost*.035;
+          mono += Math.sin(this.wph)*this.boost*(c.whistleGain || .035);
           if (this.bov > .001){ mono += (2*this.rnd() - 1)*this.bov*.22; this.bov *= Math.exp(-1/(sr*.25)); }
           if (this.flut > .001){
             this.fph += 2*Math.PI*(14 + 10*this.flut)/sr; if (this.fph > 6.2832) this.fph -= 6.2832;   // ~20 batidas por segundo, a abrandar
