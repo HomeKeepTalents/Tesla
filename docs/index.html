@@ -130,7 +130,9 @@ svg text{font-family:var(--f-num)}
 /* ---------- modo Comfort: mostradores ao estilo Mercedes-Benz ---------- */
 .mb, .lbl-mb{display:none}
 body[data-mode="comfort"] .mb{display:inline}
-body[data-mode="comfort"] .lbl-mb{display:inline;font-size:15px;font-weight:500;fill:#f2f4f8}
+body[data-mode="comfort"] #sTicks, body[data-mode="comfort"] #tTicks, body[data-mode="comfort"] .zone{display:none}
+body[data-mode="comfort"] .mb .t-lbl{font-size:19px}
+.mb-redzone{fill:none;stroke:#ff3348;stroke-width:4;stroke-linecap:round;opacity:.9}
 body[data-mode="comfort"] .lbl-std, body[data-mode="comfort"] .track, body[data-mode="comfort"] .sweep,
 body[data-mode="comfort"] .knob, body[data-mode="comfort"] #speed, body[data-mode="comfort"] #rpmNum,
 body[data-mode="comfort"] .disc .sub, body[data-mode="comfort"] #maxTxt{display:none}
@@ -281,10 +283,10 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
             <filter id="glowStrong" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            <radialGradient id="mbFill" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="150">
+            <radialGradient id="mbFill" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="196">
               <stop offset=".15" stop-color="#ff2a3d" stop-opacity="0"/><stop offset="1" stop-color="#ff2a3d" stop-opacity=".2"/>
             </radialGradient>
-            <radialGradient id="mbTrail" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="150">
+            <radialGradient id="mbTrail" gradientUnits="userSpaceOnUse" cx="200" cy="200" r="196">
               <stop offset=".1" stop-color="#ff3348" stop-opacity="0"/><stop offset="1" stop-color="#ff3348" stop-opacity=".55"/>
             </radialGradient>
           </defs>
@@ -292,12 +294,13 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
           <path class="track" id="sTrack"/>
           <path class="zone" id="sRedZone" stroke="var(--red)" opacity=".3"/>
           <g id="sTicks"></g>
+          <path class="mb mb-redzone" id="sRedMB"/><g class="mb" id="sTicksMB"></g>
           <path class="sweep" id="sSweep"/>
           <circle class="knob" id="sKnob" r="9" cx="0" cy="0"/>
-          <g class="mb" id="sNeedle"><line class="mb-needle" x1="200" y1="226" x2="200" y2="52"/><line class="mb-needle-core" x1="200" y1="214" x2="200" y2="56"/></g>
+          <g class="mb" id="sNeedle"><line class="mb-needle" x1="200" y1="230" x2="200" y2="16"/><line class="mb-needle-core" x1="200" y1="216" x2="200" y2="20"/></g>
           <circle class="mb mb-hub" cx="200" cy="200" r="13"/>
-          <text class="mb mb-digital" id="sDigital" x="200" y="282">0</text>
-          <text class="mb mb-unit" x="200" y="302">km/h</text>
+          <text class="mb mb-digital" id="sDigital" x="200" y="292">0</text>
+          <text class="mb mb-unit" x="200" y="312">km/h</text>
           <text class="big" id="speed" x="200" y="226" font-size="90">0</text>
           <text class="sub" x="200" y="262">KM/H</text>
           <text class="dim" id="maxTxt" x="200" y="300">MÁX 0</text>
@@ -314,9 +317,10 @@ button:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
           <path class="zone" id="tRedZone" stroke="var(--red)" opacity=".3"/>
           <path class="mb mb-sector" id="tSector"/><path class="mb mb-trail" id="tTrail"/>
           <g id="tTicks"></g>
+          <path class="mb mb-redzone" id="tRedMB"/><g class="mb" id="tTicksMB"></g>
           <path class="sweep" id="tSweep"/>
           <circle class="knob" id="tKnob" r="9" cx="0" cy="0"/>
-          <g class="mb" id="tNeedle"><line class="mb-needle" x1="200" y1="226" x2="200" y2="52"/><line class="mb-needle-core" x1="200" y1="214" x2="200" y2="56"/></g>
+          <g class="mb" id="tNeedle"><line class="mb-needle" x1="200" y1="230" x2="200" y2="16"/><line class="mb-needle-core" x1="200" y1="216" x2="200" y2="20"/></g>
           <circle class="mb mb-hub" cx="200" cy="200" r="13"/>
           <text class="big" id="rpmNum" x="200" y="214" font-size="62">0</text>
           <text class="sub" x="200" y="246">RPM</text>
@@ -417,6 +421,7 @@ function tick(a, r1, r2, cls){ const [x1,y1]=pt(a,r1),[x2,y2]=pt(a,r2); return `
 function label(a, r, txt, cls){ const [x,y]=pt(a,r); return `<text class="${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${txt}</text>`; }
 
 const BAND_R = 168;
+const MB_R = 196;   // modo Comfort: marcas e números junto ao aro
 // Velocímetro: 0 em baixo à esquerda, 300 em baixo à direita, 150 no topo
 const S_A0 = 135, S_SWEEP = 270;
 const sAngle = v => S_A0 + S_SWEEP*Math.min(Math.max(v,0),MAX_SPEED)/MAX_SPEED;
@@ -430,9 +435,17 @@ const sAngle = v => S_A0 + S_SWEEP*Math.min(Math.max(v,0),MAX_SPEED)/MAX_SPEED;
     const a = sAngle(v), major = v%50===0, red = v>=REDLINE;
     h += tick(a, BAND_R-20, BAND_R-(major?36:28), red ? "t-red" : major ? "t-major" : "t-minor");
     if (major) h += label(a, BAND_R-64, v, "t-lbl lbl-std" + (red?" red":""));
-    if (v % 20 === 0) h += label(a, BAND_R-50, v, "t-lbl lbl-mb" + (red?" red":""));
   }
   $("sTicks").innerHTML = h;
+  // estilo Mercedes (Comfort): marcas e números junto ao aro, números de 20 em 20
+  let m = "";
+  for (let v=0; v<=MAX_SPEED; v+=10){
+    const a = sAngle(v), major = v%20===0, red = v>=REDLINE;
+    m += tick(a, MB_R, MB_R-(major?18:9), red ? "t-red" : major ? "t-major" : "t-minor");
+    if (major) m += label(a, MB_R-36, v, "t-lbl" + (red?" red":""));
+  }
+  $("sTicksMB").innerHTML = m;
+  $("sRedMB").setAttribute("d", arc(sAngle(REDLINE), sAngle(MAX_SPEED), MB_R + 4));
 
 })();
 
@@ -573,8 +586,8 @@ function wedge(a1, a2, r){
 }
 function mbNeedle(k, ang){
   $(k + "Needle").setAttribute("transform", `rotate(${(ang + 90).toFixed(2)} ${C} ${C})`);
-  $(k + "Sector").setAttribute("d", wedge(S_A0, ang, BAND_R - 16));
-  $(k + "Trail").setAttribute("d", wedge(Math.max(S_A0, ang - 28), ang, BAND_R - 16));
+  $(k + "Sector").setAttribute("d", wedge(S_A0, ang, MB_R));
+  $(k + "Trail").setAttribute("d", wedge(Math.max(S_A0, ang - 28), ang, MB_R));
 }
 const els = { speed:$("speed"), sweep:$("sSweep"), knob:$("sKnob"), tSweep:$("tSweep"), tKnob:$("tKnob"), rpm:$("rpmNum"), ring:$("gearRing"),
   maxTxt:$("maxTxt"), dist:$("dist"), used:$("eUsed"), regen:$("eRegen"), pct:$("pctRegen") };
@@ -1130,6 +1143,14 @@ function buildTach(){
     if (big) h += label(a, BAND_R-62, r/1000, "t-lbl" + (red ? " red" : ""));
   }
   $("tTicks").innerHTML = h;
+  let m = "";
+  for (let r = 0; r <= tach.max; r += minor){
+    const a = tachAngle(r), big = r % major === 0, red = !tach.ev && r >= tach.red;
+    m += tick(a, MB_R, MB_R-(big?18:9), red ? "t-red" : big ? "t-major" : "t-minor");
+    if (big) m += label(a, MB_R-36, r/1000, "t-lbl" + (red ? " red" : ""));
+  }
+  $("tTicksMB").innerHTML = m;
+  $("tRedMB").setAttribute("d", tach.ev ? "" : arc(tachAngle(tach.red), tachAngle(tach.max), MB_R + 4));
   $("tTrack").setAttribute("d", arc(S_A0, S_A0+S_SWEEP, BAND_R));
   $("tRedZone").setAttribute("d", tach.ev ? "" : arc(tachAngle(tach.red), tachAngle(tach.max), BAND_R));
   $("tachEng").textContent = TACH_NAMES[SOUND.engine] || "";
